@@ -1,42 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Detective Mira: Cinematic Case Engine</title>
+  <title>Sherlock Holmes: Case Engine</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="app">
+<div class="game">
 
-  <header class="top">
-    <h1>🕵️ Detective Mira</h1>
+  <header>
+    <h1>🕵️ Sherlock Holmes: Case Engine</h1>
 
     <div class="hud">
-      ⭐ <span id="score">0</span>
-      🧠 <span id="clues">0</span>
-      ⚖️ <span id="trust">0</span>
+      🧠 Clues: <span id="clueCount">0</span> |
+      ⚖️ Trust: <span id="trust">0</span> |
+      🌫️ Tension: <span id="tension">0</span>
     </div>
   </header>
 
-  <div id="scene" class="scene cinematic">
+  <main id="scene" class="scene">
     <p id="text"></p>
     <div id="choices"></div>
-  </div>
+  </main>
 
-  <div class="inventory">
-    🎒 Inventory: <span id="inv">None</span>
-  </div>
+  <section class="panel">
+    <h3>📌 Evidence Board</h3>
+    <ul id="board"></ul>
+  </section>
 
-  <div class="audio-ui">
+  <footer>
     🔊 Volume
-    <input type="range" id="volume" min="0" max="1" step="0.05" value="0.6">
-  </div>
-
-  <div class="controls">
-    <button onclick="saveGame()">💾 Save</button>
-    <button onclick="loadGame()">📂 Load</button>
-    <button onclick="startGame()">🔄 Restart</button>
-  </div>
+    <input id="volume" type="range" min="0" max="1" step="0.05" value="0.6">
+    <button onclick="startGame()">Restart Case</button>
+  </footer>
 
 </div>
 
