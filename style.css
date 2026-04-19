@@ -1,87 +1,67 @@
 body {
   margin: 0;
+  background: #05070d;
   font-family: Georgia, serif;
-  background: #0b0f1a;
+  overflow: hidden;
   color: white;
 }
 
-/* HUD */
-#hud {
-  padding: 10px;
-  background: rgba(0,0,0,0.6);
-}
-
-/* WORLD LAYOUT */
-#world {
-  display: flex;
+/* ENGINE CAMERA */
+#camera {
+  width: 100vw;
   height: 100vh;
+  transition: transform 0.6s ease;
 }
 
-/* MAP */
-#map {
-  width: 200px;
-  padding: 10px;
-  background: #111827;
+/* SCENE */
+#scene {
+  padding: 40px;
+  transform-origin: center;
 }
 
-#map button {
-  width: 100%;
-  margin: 6px 0;
-  padding: 10px;
-  background: #1c2233;
-  color: white;
-  border: none;
-  cursor: pointer;
+/* NPC */
+#npc {
+  font-size: 22px;
+  color: #ffd479;
 }
 
-#map button:hover {
-  background: #2a3550;
-}
-
-/* MAIN LOCATION AREA */
-#location {
-  flex: 1;
-  padding: 20px;
-}
-
-/* TEXT */
-#text {
-  margin-top: 10px;
+/* DIALOGUE */
+#dialogue {
+  margin-top: 20px;
   font-size: 18px;
 }
 
-/* NPC NAME */
-#npc {
-  color: #ffd479;
-  font-size: 20px;
-  margin-bottom: 10px;
-}
-
 /* CHOICES */
-button.choice {
+button {
   display: block;
-  margin: 6px 0;
+  margin: 8px 0;
   padding: 10px;
-  width: 320px;
+  width: 300px;
   background: #1c2233;
-  border: none;
   color: white;
+  border: none;
   cursor: pointer;
 }
 
-button.choice:hover {
+button:hover {
   background: #2a3550;
 }
 
-/* EVIDENCE BOARD */
-#board {
-  width: 220px;
-  padding: 10px;
-  background: #111827;
+/* FADE SYSTEM */
+#fade {
+  position: fixed;
+  top:0;left:0;
+  width:100%;
+  height:100%;
+  background:black;
+  opacity:0;
+  pointer-events:none;
+  transition:0.5s;
 }
 
-#board div {
-  padding: 6px;
-  margin: 4px 0;
-  background: rgba(255,255,255,0.05);
+/* UI */
+#ui {
+  position: absolute;
+  top: 10px;
+  right: 10px;
 }
