@@ -1,32 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Detective Mira</title>
+  <title>Detective Mira: Case Engine</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <div class="app">
+<div class="app">
 
-    <div class="top-bar">
-      <h1>🕵️ Detective Mira</h1>
-      <div class="stats">
-        ⭐ <span id="score">0</span>
-        🧠 <span id="clues">0</span>
-        ⚖️ <span id="trust">0</span>
-      </div>
+  <header>
+    <h1>🕵️ Detective Mira</h1>
+    <div class="stats">
+      ⭐ <span id="score">0</span>
+      🧠 <span id="clues">0</span>
+      ⚖️ <span id="trust">0</span>
     </div>
+  </header>
 
-    <div class="game-card fade" id="card">
-      <p id="text"></p>
-      <div id="choices"></div>
-    </div>
+  <main id="scene" class="scene">
+    <p id="text"></p>
+    <div id="choices"></div>
+  </main>
 
-    <button class="restart" onclick="start()">Restart Case 🔄</button>
-
+  <div class="inventory">
+    🎒 Inventory: <span id="inv">None</span>
   </div>
 
-  <script src="script.js"></script>
+  <button onclick="start()">Restart Case 🔄</button>
+
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
