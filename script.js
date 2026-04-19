@@ -41,7 +41,7 @@ function typeText(text, cb) {
 }
 
 // =========================
-// UPDATE UI
+// UI UPDATE
 // =========================
 function update() {
   scoreEl.innerText = state.score;
@@ -51,32 +51,31 @@ function update() {
 }
 
 // =========================
-// SAFE ENGINE (NO DEAD BUTTONS)
+// SAFE SCENE ENGINE (NO DEAD BUTTONS)
 // =========================
 function scene(text, options = []) {
   choicesEl.innerHTML = "";
 
   typeText(text, () => {
     options.forEach(o => {
-      const b = document.createElement("button");
-      b.innerText = o.text;
+      const btn = document.createElement("button");
+      btn.innerText = o.text;
 
-      b.onclick = () => {
+      btn.onclick = () => {
         if (typing) return;
 
-        // ALWAYS DO SOMETHING
         if (o.effect) o.effect();
         update();
 
-        // SAFE NAVIGATION (NO DEAD ENDS)
-        if (o.next) {
+        // SAFE NAVIGATION GUARANTEE
+        if (typeof o.next === "function") {
           o.next();
         } else {
-          hub(); // fallback ALWAYS works
+          hub();
         }
       };
 
-      choicesEl.appendChild(b);
+      choicesEl.appendChild(btn);
     });
   });
 }
@@ -91,11 +90,11 @@ function start() {
 }
 
 // =========================
-// HUB (ALWAYS SAFE RETURN POINT)
+// HUB (MAIN LOOP - FIXED SYSTEM CORE)
 // =========================
 function hub() {
   scene(
-    "🕵️ The diamond is missing from the locked museum. Where do you investigate?",
+    "🕵️ The diamond is missing from the locked museum. Choose your lead:",
     [
       { text: "🏛️ Museum Hall", next: museum },
       { text: "🖥️ Security Room", next: security },
@@ -111,35 +110,31 @@ function hub() {
 // =========================
 function museum() {
   scene(
-    "Glass case shattered… but no forced entry exists.",
+    "Glass case shattered… but no forced entry.",
     [
       {
         text: "Inspect glass",
         effect: () => state.clues++,
-        next: () => {
-          scene("You notice the break was from inside.", [
-            { text: "Go security", next: security },
-            { text: "Return", next: hub }
-          ]);
-        }
+        next: museumGlass
       },
       {
         text: "Talk guard",
         next: guard
       },
       {
-        text: "Check floor",
-        effect: () => {
-          state.inventory.push("Footprint Evidence");
-        },
-        next: () => {
-          scene("Footprints lead toward kitchen wing.", [
-            { text: "Go kitchen", next: kitchen },
-            { text: "Return", next: hub }
-          ]);
-        }
-      },
-      { text: "Return", next: hub }
+        text: "Return hub",
+        next: hub
+      }
+    ]
+  );
+}
+
+function museumGlass() {
+  scene(
+    "Break pattern suggests internal access.",
+    [
+      { text: "Go security", next: security },
+      { text: "Return hub", next: hub }
     ]
   );
 }
@@ -149,22 +144,24 @@ function museum() {
 // =========================
 function guard() {
   scene(
-    "Guard: 'I saw movement… but it wasn’t an outsider.'",
+    "Guard: 'I saw movement… but not an outsider.'",
     [
       {
         text: "Press him",
         effect: () => state.trust++,
-        next: () => {
-          scene("Guard admits internal access was used.", [
-            { text: "Go security", next: security },
-            { text: "Return", next: hub }
-          ]);
-        }
+        next: guardReveal
       },
-      {
-        text: "Leave",
-        next: hub
-      }
+      { text: "Return hub", next: hub }
+    ]
+  );
+}
+
+function guardReveal() {
+  scene(
+    "Guard admits internal badge usage.",
+    [
+      { text: "Go security", next: security },
+      { text: "Return hub", next: hub }
     ]
   );
 }
@@ -174,43 +171,49 @@ function guard() {
 // =========================
 function security() {
   scene(
-    "Monitors flicker. Footage missing at 2:14 AM.",
+    "Monitors flicker. Missing footage at 2:14 AM.",
     [
       {
         text: "Check logs",
         effect: () => state.clues++,
-        next: () => {
-          scene("System override detected internally.", [
-            { text: "Go garden", next: garden },
-            { text: "Return", next: hub }
-          ]);
-        }
+        next: securityLogs
       },
       {
-        text: "Check badge records",
+        text: "Check badge access",
         effect: () => state.trust++,
-        next: () => {
-          scene("Three staff accessed restricted area.", [
-            { text: "Go kitchen", next: kitchen },
-            { text: "Return", next: hub }
-          ]);
-        }
+        next: securityBadges
       },
       {
         text: "Recover footage",
-        next: () => {
-          state.inventory.push("Blurred Footage");
-          update();
-
-          scene("Figure seen moving toward garden.", [
-            { text: "Go garden", next: garden },
-            { text: "Return", next: hub }
-          ]);
-        }
+        next: securityFootage
       },
-      { text: "Return", next: hub }
+      { text: "Return hub", next: hub }
     ]
   );
+}
+
+function securityLogs() {
+  scene("Internal override detected.", [
+    { text: "Go garden", next: garden },
+    { text: "Return hub", next: hub }
+  ]);
+}
+
+function securityBadges() {
+  scene("Multiple staff accessed restricted zone.", [
+    { text: "Go kitchen", next: kitchen },
+    { text: "Return hub", next: hub }
+  ]);
+}
+
+function securityFootage() {
+  state.inventory.push("Blurred Footage");
+  update();
+
+  scene("Figure seen heading toward garden.", [
+    { text: "Go garden", next: garden },
+    { text: "Return hub", next: hub }
+  ]);
 }
 
 // =========================
@@ -226,32 +229,36 @@ function kitchen() {
           state.clues++;
           state.inventory.push("Chemical Evidence");
         },
-        next: () => {
-          scene("Chemical residue confirms cleanup.", [
-            { text: "Go security", next: security },
-            { text: "Return", next: hub }
-          ]);
-        }
+        next: kitchenSink
       },
       {
         text: "Check trash",
-        next: () => {
-          state.inventory.push("Fabric Piece");
-          update();
-
-          scene("Fabric matches museum staff uniform.", [
-            { text: "Go garden", next: garden },
-            { text: "Return", next: hub }
-          ]);
-        }
+        next: kitchenTrash
       },
       {
         text: "Talk chef",
         next: chef
       },
-      { text: "Return", next: hub }
+      { text: "Return hub", next: hub }
     ]
   );
+}
+
+function kitchenSink() {
+  scene("Chemical residue confirms cleanup.", [
+    { text: "Go security", next: security },
+    { text: "Return hub", next: hub }
+  ]);
+}
+
+function kitchenTrash() {
+  state.inventory.push("Fabric Piece");
+  update();
+
+  scene("Fabric matches museum staff uniform.", [
+    { text: "Go garden", next: garden },
+    { text: "Return hub", next: hub }
+  ]);
 }
 
 // =========================
@@ -266,43 +273,55 @@ function chef() {
         effect: () => state.clues++,
         next: security
       },
-      {
-        text: "Leave",
-        next: hub
-      }
+      { text: "Return hub", next: hub }
     ]
   );
 }
 
 // =========================
-// LIBRARY
+// LIBRARY (FIXED — YOUR BUG WAS HERE BEFORE)
 // =========================
 function library() {
   scene(
-    "Books displaced. A security file is missing.",
+    "Books displaced. Security file missing.",
     [
       {
         text: "Search shelves",
         effect: () => {
-          state.inventory.push("Security Page");
           state.clues++;
+          state.inventory.push("Security Page");
         },
-        next: () => {
-          scene("Blind spots in security documented here.", [
-            { text: "Go security", next: security },
-            { text: "Return", next: hub }
-          ]);
-        }
+        next: libraryResult
       },
       {
         text: "Talk librarian",
-        next: () => {
-          scene("Librarian: 'Some truths are dangerous.'", [
-            { text: "Return", next: hub }
-          ]);
-        }
+        next: librarian
       },
-      { text: "Return", next: hub }
+      { text: "Return hub", next: hub }
+    ]
+  );
+}
+
+function libraryResult() {
+  scene(
+    "Security blind spots documented here.",
+    [
+      { text: "Go security", next: security },
+      { text: "Go garden", next: garden },
+      { text: "Return hub", next: hub }
+    ]
+  );
+}
+
+// =========================
+// LIBRARIAN
+// =========================
+function librarian() {
+  scene(
+    "Librarian: 'Some truths are locked away.'",
+    [
+      { text: "Force answers", next: security },
+      { text: "Return hub", next: hub }
     ]
   );
 }
@@ -314,28 +333,13 @@ function garden() {
   scene(
     "Fog covers the garden. Everything connects here.",
     [
-      {
-        text: "Follow footprints",
-        next: finalCase
-      },
-      {
-        text: "Inspect bushes",
-        effect: () => state.clues++,
-        next: finalCase
-      },
+      { text: "Follow footprints", next: finalCase },
+      { text: "Inspect bushes", next: finalCase },
       {
         text: "Check hidden wall",
-        next: () => {
-          scene("A hidden door appears behind ivy.", [
-            {
-              text: "Enter",
-              next: secretRoom
-            },
-            { text: "Return", next: hub }
-          ]);
-        }
+        next: secretRoom
       },
-      { text: "Return", next: hub }
+      { text: "Return hub", next: hub }
     ]
   );
 }
@@ -345,13 +349,10 @@ function garden() {
 // =========================
 function secretRoom() {
   scene(
-    "You find surveillance files of all suspects.",
+    "Hidden surveillance files discovered.",
     [
-      {
-        text: "Analyze files",
-        next: secretEnding
-      },
-      { text: "Return", next: hub }
+      { text: "Analyze files", next: secretEnding },
+      { text: "Return hub", next: hub }
     ]
   );
 }
@@ -360,9 +361,9 @@ function secretRoom() {
 // ENDINGS
 // =========================
 function finalCase() {
-  if (state.clues >= 6 && state.trust >= 2) goodEnding();
+  if (state.clues >= 5 && state.trust >= 2) goodEnding();
   else if (state.inventory.includes("Blurred Footage")) secretEnding();
-  else if (state.clues >= 4) neutralEnding();
+  else if (state.clues >= 3) neutralEnding();
   else badEnding();
 }
 
@@ -382,5 +383,5 @@ function secretEnding() {
   scene("🧠 SECRET: Hidden conspiracy uncovered.", [{ text: "Restart", next: start }]);
 }
 
-// START
+// START GAME
 start();
