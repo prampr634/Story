@@ -1,140 +1,51 @@
-/* =========================
-   BASE LAYOUT
-========================= */
-
 body {
   margin: 0;
-  font-family: Georgia, serif;
-  background: #0b0f1a;
+  font-family: Arial;
+  background: radial-gradient(circle at top, #0f172a, #020617);
   color: white;
 }
 
-/* MAIN WRAPPER */
-.game {
-  max-width: 1000px;
+.app {
+  max-width: 750px;
   margin: auto;
   padding: 20px;
-}
-
-/* =========================
-   HEADER HUD
-========================= */
-
-.hud {
   text-align: center;
-  margin-bottom: 10px;
 }
 
 .stats {
   opacity: 0.8;
-  margin-top: 5px;
+  font-size: 14px;
 }
 
-/* =========================
-   STORY BOX
-========================= */
-
-.scene-box {
-  background: rgba(255,255,255,0.06);
-  padding: 20px;
-  border-radius: 12px;
+.scene {
+  margin-top: 40px;
+  padding: 25px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
   min-height: 200px;
-  margin-bottom: 20px;
+  transition: 0.4s;
 }
 
 #text {
-  font-size: 18px;
-  margin-bottom: 15px;
+  font-size: 22px;
+  min-height: 80px;
 }
 
-#choices button {
-  display: block;
-  width: 100%;
-  margin: 8px 0;
-  padding: 10px;
-  cursor: pointer;
-  background: #1c1f2a;
+button {
+  margin: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #6366f1;
   color: white;
-  border: 1px solid #333;
-  border-radius: 8px;
-  transition: 0.2s;
-}
-
-#choices button:hover {
-  background: #2c3142;
-}
-
-/* =========================
-   DETECTIVE UI
-========================= */
-
-.ui {
-  display: flex;
-  gap: 20px;
-}
-
-.panel {
-  flex: 1;
-  background: rgba(255,255,255,0.05);
-  padding: 15px;
-  border-radius: 12px;
-  min-height: 200px;
-}
-
-.panel h2 {
-  margin-top: 0;
-  font-size: 18px;
-}
-
-.panel button {
-  display: block;
-  width: 100%;
-  margin: 6px 0;
-  padding: 8px;
-  cursor: pointer;
-  background: #141826;
-  color: white;
-  border: 1px solid #333;
-  border-radius: 6px;
-}
-
-.panel button:hover {
-  background: #22283a;
-}
-
-/* =========================
-   EVIDENCE BOARD
-========================= */
-
-#board {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-#board li {
-  padding: 6px;
-  margin: 4px 0;
-  background: rgba(255,255,255,0.05);
-  border-radius: 6px;
   cursor: pointer;
 }
 
-/* =========================
-   FOOTER
-========================= */
+button:hover {
+  background: #818cf8;
+}
 
-.footer {
-  margin-top: 20px;
-  text-align: center;
+.inventory {
+  margin-top: 15px;
   opacity: 0.8;
-}
-
-/* =========================
-   ATMOSPHERIC EFFECTS
-========================= */
-
-body.tension {
-  background: #120000;
-  transition: 0.5s;
 }
