@@ -1,5 +1,6 @@
+
 // =========================
-// STATE SYSTEM
+// STATE
 // =========================
 let state = {
   score: 0,
@@ -19,7 +20,7 @@ const trustEl = document.getElementById("trust");
 const invEl = document.getElementById("inv");
 
 // =========================
-// SAFE TYPEWRITER ENGINE
+// TYPE ENGINE
 // =========================
 let typing = false;
 
@@ -36,11 +37,11 @@ function typeText(text, cb) {
       typing = false;
       if (cb) cb();
     }
-  }, 15);
+  }, 12);
 }
 
 // =========================
-// UI UPDATE
+// UPDATE UI
 // =========================
 function update() {
   scoreEl.innerText = state.score;
@@ -61,6 +62,8 @@ function scene(text, options = []) {
       b.innerText = o.text;
 
       b.onclick = () => {
+        if (typing) return;
+
         if (o.effect) o.effect();
         update();
         o.next();
@@ -79,34 +82,129 @@ function start() {
   update();
 
   scene(
-    "🕵️ The diamond is missing. The museum is locked. Three locations are available.",
+    "🕵️ A diamond vanished inside a locked museum. No forced entry. Three leads remain.",
     [
-      { text: "🍪 Kitchen", next: kitchen },
+      { text: "🏛️ Museum", next: museum },
       { text: "🖥️ Security Room", next: security },
-      { text: "🌿 Garden", next: garden }
+      { text: "🍪 Kitchen", next: kitchen },
+      { text: "📚 Library", next: library }
     ]
   );
 }
 
 // =========================
-// KITCHEN
+// MUSEUM (EXPANDED)
+// =========================
+function museum() {
+  scene(
+    "Glass case shattered… but no entry point exists.",
+    [
+      {
+        text: "Inspect glass",
+        effect: () => state.clues++,
+        next: museum2
+      },
+      {
+        text: "Talk to guard",
+        effect: () => state.trust++,
+        next: guard
+      },
+      {
+        text: "Go library",
+        next: library
+      }
+    ]
+  );
+}
+
+function museum2() {
+  scene(
+    "The break looks staged… someone wanted it to look like theft.",
+    [
+      { text: "Continue", next: security }
+    ]
+  );
+}
+
+// =========================
+// 🧍 GUARD NPC
+// =========================
+function guard() {
+  scene(
+    "Guard: 'I saw someone inside... but I shouldn't say more.'",
+    [
+      {
+        text: "Press harder",
+        effect: () => state.clues++,
+        next: security
+      },
+      {
+        text: "Believe him",
+        next: museum
+      }
+    ]
+  );
+}
+
+// =========================
+// SECURITY (EXPANDED)
+// =========================
+function security() {
+  scene(
+    "Monitors flicker. One camera feed is missing.",
+    [
+      {
+        text: "Check logs",
+        effect: () => state.clues++,
+        next: security2
+      },
+      {
+        text: "Question technician",
+        effect: () => state.trust++,
+        next: security3
+      }
+    ]
+  );
+}
+
+function security2() {
+  scene(
+    "System shows internal override during theft window.",
+    [
+      { text: "Go garden", next: garden }
+    ]
+  );
+}
+
+function security3() {
+  scene(
+    "Technician: 'Someone used an authorized badge... not a hacker.'",
+    [
+      { text: "Go museum", next: museum },
+      { text: "Go library", next: library }
+    ]
+  );
+}
+
+// =========================
+// 🍪 KITCHEN
 // =========================
 function kitchen() {
   scene(
-    "The kitchen is messy. Something was dragged across the floor.",
+    "Kitchen is too clean… like evidence was removed.",
     [
       {
-        text: "Search drawers",
-        effect: () => state.clues++,
-        next: () => {
-          state.inventory.push("Key");
-          update();
-          kitchen2();
-        }
+        text: "Search sink",
+        effect: () => {
+          state.clues++;
+          state.inventory.push("Chemical Residue");
+        },
+        next: kitchen2
       },
       {
-        text: "Leave",
-        next: start
+        text: "Talk to chef",
+        effect: () => state.trust++,
+        next: chef
       }
     ]
   );
@@ -114,77 +212,141 @@ function kitchen() {
 
 function kitchen2() {
   scene(
-    "You found a strange key. It might open something important.",
+    "Bleach traces suggest cleanup after incident.",
     [
-      { text: "Return", next: start }
+      { text: "Go security", next: security },
+      { text: "Go garden", next: garden }
     ]
   );
 }
 
 // =========================
-// SECURITY
+// 🍽️ CHEF NPC
 // =========================
-function security() {
+function chef() {
   scene(
-    "Monitors flicker. A guard avoids eye contact.",
+    "Chef: 'I was cooking... I didn't see anything suspicious.'",
     [
+      { text: "Trust him", next: kitchen },
       {
-        text: "Interrogate",
-        effect: () => state.trust++,
-        next: () => {
-          scene(
-            "Guard: 'I saw someone go to the garden.'",
-            [{ text: "Go garden", next: garden }]
-          );
-        }
-      },
-      {
-        text: "Hack system",
-        next: () => lose("Alarm triggered. Investigation failed.")
+        text: "Accuse him",
+        effect: () => state.clues++,
+        next: security
       }
     ]
   );
 }
 
 // =========================
-// GARDEN
+// 📚 LIBRARY (NEW BIG AREA)
+// =========================
+function library() {
+  scene(
+    "Books are displaced… one file is missing: Security Protocols.",
+    [
+      {
+        text: "Search shelves",
+        effect: () => {
+          state.clues++;
+          state.inventory.push("Torn Security Page");
+        },
+        next: library2
+      },
+      {
+        text: "Talk to librarian",
+        next: librarian
+      }
+    ]
+  );
+}
+
+function library2() {
+  scene(
+    "The missing file describes museum blind spots.",
+    [
+      { text: "Go security", next: security },
+      { text: "Go museum", next: museum }
+    ]
+  );
+}
+
+// =========================
+// 🧍 LIBRARIAN
+// =========================
+function librarian() {
+  scene(
+    "Librarian: 'Some books are better left unread.'",
+    [
+      {
+        text: "Force answers",
+        effect: () => state.trust--,
+        next: security
+      },
+      { text: "Leave", next: library }
+    ]
+  );
+}
+
+// =========================
+// 🌿 GARDEN (FINAL HUB)
 // =========================
 function garden() {
   scene(
-    "Fog covers the garden. Two paths appear.",
+    "Fog covers the garden. Everything connects here.",
     [
       {
-        text: "Follow path",
-        next: () => {
-          if (state.trust > 0 && state.inventory.includes("Key")) {
-            win("You solved the case using all evidence 🏆");
-          } else {
-            lose("You were tricked. Wrong path.");
-          }
-        }
+        text: "Follow footprints",
+        next: finalCase
       },
       {
-        text: "Call backup",
-        next: () => win("Backup arrives. Case solved professionally 🚔")
+        text: "Inspect bushes",
+        effect: () => state.clues++,
+        next: finalCase
       }
     ]
   );
+}
+
+// =========================
+// 🏁 FINAL CASE (MORE ENDINGS)
+// =========================
+function finalCase() {
+
+  if (state.clues >= 5 && state.trust >= 2) {
+    goodEnding();
+  }
+
+  else if (state.clues >= 3) {
+    neutralEnding();
+  }
+
+  else if (state.inventory.includes("Torn Security Page")) {
+    secretEnding();
+  }
+
+  else {
+    badEnding();
+  }
 }
 
 // =========================
 // ENDINGS
 // =========================
-function win(msg) {
-  scene("🏆 " + msg, [
-    { text: "Play Again", next: start }
-  ]);
+function goodEnding() {
+  scene("🏆 Perfect deduction. Insider exposed. Case solved.", [{ text: "Restart", next: start }]);
 }
 
-function lose(msg) {
-  scene("💀 " + msg, [
-    { text: "Restart", next: start }
-  ]);
+function neutralEnding() {
+  scene("🟡 Case solved, but key truths remain hidden.", [{ text: "Restart", next: start }]);
 }
 
-// START GAME
+function badEnding() {
+  scene("💀 Case failed. Suspect escapes.", [{ text: "Restart", next: start }]);
+}
+
+function secretEnding() {
+  scene("🧠 SECRET ENDING: You discovered hidden internal surveillance conspiracy.", [{ text: "Restart", next: start }]);
+}
+
+// START
 start();
