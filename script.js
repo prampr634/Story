@@ -1,6 +1,5 @@
-
 // =========================
-// STATE SYSTEM
+// STATE
 // =========================
 let state = {
   score: 0,
@@ -37,11 +36,11 @@ function typeText(text, cb) {
       typing = false;
       if (cb) cb();
     }
-  }, 10);
+  }, 8);
 }
 
 // =========================
-// UPDATE UI
+// UI UPDATE
 // =========================
 function update() {
   scoreEl.innerText = state.score;
@@ -63,7 +62,6 @@ function scene(text, options = []) {
 
       b.onclick = () => {
         if (typing) return;
-
         if (o.effect) o.effect();
         update();
         o.next();
@@ -75,38 +73,45 @@ function scene(text, options = []) {
 }
 
 // =========================
-// START
+// START (INIT ONLY)
 // =========================
 function start() {
   state = { score: 0, clues: 0, trust: 0, inventory: [] };
   update();
+  hub();
+}
 
+// =========================
+// HUB (MAIN LOOP - FIXES ALL BUGS)
+// =========================
+function hub() {
   scene(
-    "🕵️ A diamond vanished from a locked museum. No forced entry. You must uncover the truth.",
+    "🕵️ The diamond is missing. The museum is locked. You must investigate all leads.",
     [
-      { text: "🏛️ Enter Museum", next: museum },
+      { text: "🏛️ Museum Hall", next: museum },
       { text: "🖥️ Security Room", next: security },
-      { text: "🍪 Kitchen", next: kitchen },
-      { text: "🌿 Garden", next: garden },
-      { text: "📚 Library", next: library }
+      { text: "🍪 Kitchen Wing", next: kitchen },
+      { text: "🌿 Garden Area", next: garden },
+      { text: "📚 Library Archives", next: library }
     ]
   );
 }
 
 // =========================
-// 🏛️ MUSEUM (EXPANDED STORY)
+// MUSEUM (EXPANDED)
 // =========================
 function museum() {
   scene(
-    "Glass case shattered… but strangely no broken entrance.",
+    "Glass case shattered from inside. No forced entry detected.",
     [
       {
-        text: "Inspect glass",
+        text: "Inspect glass fragments",
         effect: () => state.clues++,
-        next: museum2
+        next: () => museum2()
       },
       {
-        text: "Check camera angle",
+        text: "Check security angle",
+        effect: () => state.trust++,
         next: security
       },
       {
@@ -114,13 +119,8 @@ function museum() {
         next: guard
       },
       {
-        text: "Check floor prints",
-        effect: () => state.clues++,
-        next: museum3
-      },
-      {
-        text: "Return outside",
-        next: start
+        text: "Return to hub",
+        next: hub
       }
     ]
   );
@@ -128,56 +128,45 @@ function museum() {
 
 function museum2() {
   scene(
-    "Break pattern suggests internal access.",
+    "Break pattern suggests internal access, not theft.",
     [
-      { text: "Continue", next: security }
-    ]
-  );
-}
-
-function museum3() {
-  state.inventory.push("Footprint Evidence");
-  update();
-
-  scene(
-    "Footprints lead toward kitchen wing.",
-    [
+      { text: "Go security", next: security },
       { text: "Go kitchen", next: kitchen },
-      { text: "Go security", next: security }
+      { text: "Return", next: hub }
     ]
   );
 }
 
 // =========================
-// 🧍 GUARD
+// GUARD NPC
 // =========================
 function guard() {
   scene(
-    "Guard: 'I saw nothing… but I heard movement.'",
+    "Guard: 'I saw movement… but it wasn’t an outsider.'",
     [
       {
-        text: "Press him",
+        text: "Press further",
         effect: () => state.trust++,
         next: security
       },
       {
-        text: "Observe behavior",
-        next: kitchen
+        text: "Observe silently",
+        next: museum
       },
       {
-        text: "Leave",
-        next: museum
+        text: "Return",
+        next: hub
       }
     ]
   );
 }
 
 // =========================
-// 🖥️ SECURITY ROOM (EXPANDED)
+// SECURITY ROOM
 // =========================
 function security() {
   scene(
-    "Monitors flicker. Footage missing at exact theft time.",
+    "Monitors flicker. Camera feed missing at 2:14 AM.",
     [
       {
         text: "Check logs",
@@ -185,28 +174,34 @@ function security() {
         next: security2
       },
       {
-        text: "Check badge records",
+        text: "Check badge access",
         effect: () => state.trust++,
         next: security3
       },
       {
-        text: "Recover deleted footage",
+        text: "Recover footage",
         next: security4
       },
       {
-        text: "Question technician",
-        next: technician
+        text: "Return to hub",
+        next: hub
       }
     ]
   );
 }
 
 function security2() {
-  scene("Internal override detected.", [{ text: "Continue", next: garden }]);
+  scene("Internal override detected during theft window.", [
+    { text: "Go garden", next: garden },
+    { text: "Return", next: hub }
+  ]);
 }
 
 function security3() {
-  scene("Multiple staff accessed restricted zone.", [{ text: "Go kitchen", next: kitchen }]);
+  scene("Multiple staff accessed restricted zone.", [
+    { text: "Go kitchen", next: kitchen },
+    { text: "Return", next: hub }
+  ]);
 }
 
 function security4() {
@@ -214,20 +209,20 @@ function security4() {
   update();
 
   scene(
-    "You see a figure carrying a case toward garden.",
+    "Recovered footage shows a figure leaving toward the garden.",
     [
       { text: "Go garden", next: garden },
-      { text: "Go museum", next: museum }
+      { text: "Return hub", next: hub }
     ]
   );
 }
 
 // =========================
-// 🍪 KITCHEN (EXPANDED)
+// KITCHEN
 // =========================
 function kitchen() {
   scene(
-    "Kitchen smells like bleach and panic.",
+    "Kitchen smells like bleach. Evidence was cleaned fast.",
     [
       {
         text: "Search sink",
@@ -239,62 +234,68 @@ function kitchen() {
       },
       {
         text: "Check trash",
+        effect: () => state.clues++,
         next: kitchen3
       },
       {
         text: "Talk chef",
         next: chef
+      },
+      {
+        text: "Return hub",
+        next: hub
       }
     ]
   );
 }
 
 function kitchen2() {
-  scene("Cleaning happened minutes after theft.", [{ text: "Continue", next: kitchen }]);
+  scene("Cleaning chemicals used immediately after incident.", [
+    { text: "Go security", next: security },
+    { text: "Return", next: hub }
+  ]);
 }
 
 function kitchen3() {
   state.inventory.push("Fabric Piece");
   update();
 
-  scene(
-    "Fabric matches museum staff uniform.",
-    [
-      { text: "Go security", next: security },
-      { text: "Go garden", next: garden }
-    ]
-  );
+  scene("Fabric matches museum staff uniform.", [
+    { text: "Go garden", next: garden },
+    { text: "Return", next: hub }
+  ]);
 }
 
 // =========================
-// 🍽️ CHEF
+// CHEF
 // =========================
 function chef() {
   scene(
-    "Chef: 'I was cooking… nothing else.'",
+    "Chef: 'I only cook. I saw nothing suspicious.'",
     [
       { text: "Believe him", next: kitchen },
       {
         text: "Accuse him",
         effect: () => state.clues++,
         next: security
-      }
+      },
+      { text: "Return", next: hub }
     ]
   );
 }
 
 // =========================
-// 📚 LIBRARY (NEW BIG AREA)
+// LIBRARY (EXPANDED)
 // =========================
 function library() {
   scene(
-    "Books are displaced. One file is missing.",
+    "Books are misplaced. A file is missing from security archives.",
     [
       {
         text: "Search shelves",
         effect: () => {
           state.clues++;
-          state.inventory.push("Security Manual Page");
+          state.inventory.push("Security Page");
         },
         next: library2
       },
@@ -303,32 +304,35 @@ function library() {
         next: librarian
       },
       {
-        text: "Go museum records",
-        next: museum
+        text: "Return hub",
+        next: hub
       }
     ]
   );
 }
 
 function library2() {
-  scene("Security blind spots are documented here.", [{ text: "Continue", next: security }]);
+  scene("Security blind spots documented here.", [
+    { text: "Go security", next: security },
+    { text: "Return", next: hub }
+  ]);
 }
 
 // =========================
-// 🧍 LIBRARIAN
+// LIBRARIAN
 // =========================
 function librarian() {
   scene(
-    "Librarian: 'Some truths are locked away for a reason.'",
+    "Librarian: 'Some truths are hidden for a reason.'",
     [
       { text: "Force answers", next: security },
-      { text: "Leave", next: library }
+      { text: "Return", next: library }
     ]
   );
 }
 
 // =========================
-// 🌿 GARDEN (FINAL HUB)
+// GARDEN (FINAL HUB)
 // =========================
 function garden() {
   scene(
@@ -337,36 +341,36 @@ function garden() {
       { text: "Follow footprints", next: finalCase },
       { text: "Inspect bushes", next: finalCase },
       { text: "Check hidden wall", next: secretPath },
-      { text: "Recheck museum", next: museum }
+      { text: "Return hub", next: hub }
     ]
   );
 }
 
 // =========================
-// 💀 SECRET PATH
+// SECRET PATH
 // =========================
 function secretPath() {
   scene(
-    "A hidden door is behind ivy.",
+    "A hidden door appears behind ivy.",
     [
       { text: "Enter room", next: secretRoom },
-      { text: "Go back", next: garden }
+      { text: "Return", next: garden }
     ]
   );
 }
 
 function secretRoom() {
   scene(
-    "You find surveillance files of every suspect.",
+    "You discover surveillance files of ALL suspects.",
     [
       { text: "Analyze files", next: secretEnding },
-      { text: "Leave", next: badEnding }
+      { text: "Return", next: hub }
     ]
   );
 }
 
 // =========================
-// ENDINGS (MULTI-LOGIC)
+// ENDINGS
 // =========================
 function finalCase() {
   if (state.clues >= 6 && state.trust >= 2) goodEnding();
@@ -380,7 +384,7 @@ function goodEnding() {
 }
 
 function neutralEnding() {
-  scene("🟡 Case solved but incomplete.", [{ text: "Restart", next: start }]);
+  scene("🟡 Case solved but incomplete truth.", [{ text: "Restart", next: start }]);
 }
 
 function badEnding() {
@@ -388,8 +392,8 @@ function badEnding() {
 }
 
 function secretEnding() {
-  scene("🧠 SECRET: Hidden conspiracy exposed.", [{ text: "Restart", next: start }]);
+  scene("🧠 SECRET: Hidden conspiracy uncovered.", [{ text: "Restart", next: start }]);
 }
 
-// START
+// START GAME
 start();
