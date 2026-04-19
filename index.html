@@ -1,61 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Sherlock Detective Engine</title>
+  <title>Detective Mira: Case Engine</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-  <div class="game">
+<div class="app">
 
-    <!-- HEADER / HUD -->
-    <header class="hud">
-      <h1>🕵️ Sherlock Holmes Case Engine</h1>
+  <header>
+    <h1>🕵️ Detective Mira</h1>
+    <div class="stats">
+      ⭐ <span id="score">0</span>
+      🧠 <span id="clues">0</span>
+      ⚖️ <span id="trust">0</span>
+    </div>
+  </header>
 
-      <div class="stats">
-        🧩 Clues: <span id="clueCount">0</span> |
-        ⚖️ Trust: <span id="trust">0</span> |
-        🌫️ Tension: <span id="tension">0</span>
-      </div>
-    </header>
+  <main id="scene" class="scene">
+    <p id="text"></p>
+    <div id="choices"></div>
+  </main>
 
-    <!-- MAIN STORY -->
-    <main class="scene-box">
-      <p id="text"></p>
-      <div id="choices"></div>
-    </main>
-
-    <!-- DETECTIVE UI -->
-    <section class="ui">
-
-      <!-- MAP -->
-      <div class="panel">
-        <h2>🗺️ Map</h2>
-        <button onclick="go('kitchen')">🍽️ Kitchen Wing</button>
-        <button onclick="go('security')">🖥️ Security Room</button>
-        <button onclick="go('garden')">🌿 Garden</button>
-        <button onclick="go('vault')">🏛️ Vault</button>
-      </div>
-
-      <!-- EVIDENCE BOARD -->
-      <div class="panel">
-        <h2>🧠 Evidence Board</h2>
-        <ul id="board"></ul>
-      </div>
-
-    </section>
-
-    <!-- SETTINGS -->
-    <footer class="footer">
-      🔊 Volume:
-      <input id="volume" type="range" min="0" max="1" step="0.05" value="0.6">
-    </footer>
-
+  <div class="inventory">
+    🎒 Inventory: <span id="inv">None</span>
   </div>
 
-  <script src="script.js"></script>
+  <button onclick="start()">Restart Case 🔄</button>
 
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
