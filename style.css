@@ -1,42 +1,36 @@
 body {
   margin: 0;
-  background: #05070d;
   font-family: Georgia, serif;
-  overflow: hidden;
+  background: #0b0f1a;
   color: white;
 }
 
-/* ENGINE CAMERA */
-#camera {
-  width: 100vw;
-  height: 100vh;
-  transition: transform 0.6s ease;
+/* HUD */
+#hud {
+  padding: 10px;
+  background: rgba(0,0,0,0.5);
 }
 
 /* SCENE */
 #scene {
-  padding: 40px;
-  transform-origin: center;
+  padding: 20px;
+  min-height: 250px;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-/* NPC */
+/* NPC NAME */
 #npc {
-  font-size: 22px;
-  color: #ffd479;
-}
-
-/* DIALOGUE */
-#dialogue {
-  margin-top: 20px;
   font-size: 18px;
+  color: #ffd479;
+  margin-bottom: 10px;
 }
 
-/* CHOICES */
+/* BUTTONS */
 button {
   display: block;
-  margin: 8px 0;
+  width: 100%;
+  margin: 6px 0;
   padding: 10px;
-  width: 300px;
   background: #1c2233;
   color: white;
   border: none;
@@ -44,24 +38,27 @@ button {
 }
 
 button:hover {
-  background: #2a3550;
+  background: #2b3550;
 }
 
-/* FADE SYSTEM */
-#fade {
-  position: fixed;
-  top:0;left:0;
-  width:100%;
-  height:100%;
-  background:black;
-  opacity:0;
-  pointer-events:none;
-  transition:0.5s;
+/* FADE ANIMATION */
+.fade {
+  opacity: 1;
 }
 
-/* UI */
-#ui {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+.fade-out {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+/* SHAKE EFFECT (tension moments) */
+.shake {
+  animation: shake 0.3s;
+}
+
+@keyframes shake {
+  0% { transform: translate(0,0); }
+  25% { transform: translate(5px,0); }
+  50% { transform: translate(-5px,0); }
+  100% { transform: translate(0,0); }
 }
