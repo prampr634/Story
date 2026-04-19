@@ -1,61 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Sherlock Detective Engine</title>
-  <link rel="stylesheet" href="style.css">
-</head>
+<div id="screen">
 
-<body>
+  <div id="topbar">
+    🕵️ Sherlock Case File
+    <span id="stats">
+      Clues: <span id="clueCount">0</span> |
+      Trust: <span id="trust">0</span> |
+      Tension: <span id="tension">0</span>
+    </span>
+  </div>
 
-  <div class="game">
+  <div id="scene">
+    <div id="text"></div>
+    <div id="choices"></div>
+  </div>
 
-    <!-- HEADER / HUD -->
-    <header class="hud">
-      <h1>🕵️ Sherlock Holmes Case Engine</h1>
+  <div id="ui">
 
-      <div class="stats">
-        🧩 Clues: <span id="clueCount">0</span> |
-        ⚖️ Trust: <span id="trust">0</span> |
-        🌫️ Tension: <span id="tension">0</span>
-      </div>
-    </header>
+    <div class="panel">
+      <h3>🗺️ Locations</h3>
+      <button onclick="go('kitchen')">Kitchen</button>
+      <button onclick="go('security')">Security</button>
+      <button onclick="go('garden')">Garden</button>
+      <button onclick="go('vault')">Vault</button>
+    </div>
 
-    <!-- MAIN STORY -->
-    <main class="scene-box">
-      <p id="text"></p>
-      <div id="choices"></div>
-    </main>
-
-    <!-- DETECTIVE UI -->
-    <section class="ui">
-
-      <!-- MAP -->
-      <div class="panel">
-        <h2>🗺️ Map</h2>
-        <button onclick="go('kitchen')">🍽️ Kitchen Wing</button>
-        <button onclick="go('security')">🖥️ Security Room</button>
-        <button onclick="go('garden')">🌿 Garden</button>
-        <button onclick="go('vault')">🏛️ Vault</button>
-      </div>
-
-      <!-- EVIDENCE BOARD -->
-      <div class="panel">
-        <h2>🧠 Evidence Board</h2>
-        <ul id="board"></ul>
-      </div>
-
-    </section>
-
-    <!-- SETTINGS -->
-    <footer class="footer">
-      🔊 Volume:
-      <input id="volume" type="range" min="0" max="1" step="0.05" value="0.6">
-    </footer>
+    <div class="panel">
+      <h3>🧠 Evidence File</h3>
+      <ul id="board"></ul>
+    </div>
 
   </div>
 
-  <script src="script.js"></script>
+  <div id="fade"></div>
 
-</body>
-</html>
+</div>
+
+<script src="script.js"></script>
