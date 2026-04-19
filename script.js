@@ -1,124 +1,85 @@
 // =========================
-// GAME STATE
+// STATE
 // =========================
 let state = {
   score: 0,
   clues: 0,
   trust: 0,
-  inventory: []
+  inventory: [],
+  tension: 0
 };
 
 // =========================
-// STORY DATABASE (ENGINE CORE)
+// AUDIO SYSTEM
 // =========================
-const STORY = {
-  start: {
-    text: "🕵️ The museum alarm triggered at 2:13 AM. The diamond is gone. Three locations show suspicious activity.",
-    choices: [
-      { text: "🍪 Kitchen", next: "kitchen" },
-      { text: "🖥️ Security Room", next: "security" },
-      { text: "🌿 Garden", next: "garden" }
-    ]
-  },
-
-  kitchen: {
-    text: "The kitchen is frozen in chaos. Broken glass and strange footprints.",
-    choices: [
-      {
-        text: "Search drawer",
-        effect: () => { state.inventory.push("Key"); state.clues++; },
-        next: "kitchen2"
-      },
-      {
-        text: "Eat cookie",
-        next: "lose_poison"
-      }
-    ]
-  },
-
-  kitchen2: {
-    text: "You find a coded key hidden inside.",
-    choices: [
-      { text: "Return", next: "start" }
-    ]
-  },
-
-  security: {
-    text: "Security system is corrupted. A guard is nervous.",
-    choices: [
-      {
-        text: "Interrogate",
-        effect: () => state.trust++,
-        next: "security2"
-      },
-      {
-        text: "Hack system",
-        next: "lose_alarm"
-      }
-    ]
-  },
-
-  security2: {
-    text: "Guard whispers: 'There were TWO suspects in the garden.'",
-    choices: [
-      { text: "Go garden", next: "garden" }
-    ]
-  },
-
-  garden: {
-    text: "Fog covers the garden. Two paths appear.",
-    choices: [
-      {
-        text: "Follow clean path",
-        next: "check_win"
-      },
-      {
-        text: "Search hidden area",
-        next: "secret"
-      },
-      {
-        text: "Call backup",
-        next: "win_backup"
-      }
-    ]
-  },
-
-  secret: {
-    text: "You discover hidden evidence buried underground...",
-    choices: [
-      { text: "Analyze", next: "check_secret" }
-    ]
-  },
-
-  // ENDINGS
-  lose_poison: {
-    text: "💀 Poisoned cookie. Investigation failed.",
-    choices: [{ text: "Restart", next: "start" }]
-  },
-
-  lose_alarm: {
-    text: "🚨 Alarm triggered. Case locked down.",
-    choices: [{ text: "Restart", next: "start" }]
-  },
-
-  win_backup: {
-    text: "🏆 Backup arrives. Case solved professionally.",
-    choices: [{ text: "Play again", next: "start" }]
-  }
+const SFX = {
+  click: new Audio("sounds/click.mp3"),
+  win: new Audio("sounds/win.mp3"),
+  lose: new Audio("sounds/lose.mp3"),
+  wind: new Audio("sounds/wind.mp3")
 };
+
+let bgMusic = new Audio("sounds/ambient.mp3");
+bgMusic.loop = true;
+
+let volume = 0.6;
+
+document.getElementById("volume").addEventListener("input", e => {
+  volume = parseFloat(e.target.value);
+});
+
+// play sound
+function play(s) {
+  if (!SFX[s]) return;
+  SFX[s].volume = volume;
+  SFX[s].currentTime = 0;
+  SFX[s].play();
+}
+
+// music fade
+function musicFadeIn() {
+  bgMusic.play();
+  let v = 0;
+  const t = setInterval(() => {
+    if (v < 0.4) {
+      v += 0.02;
+      bgMusic.volume = v * volume;
+    } else clearInterval(t);
+  }, 40);
+}
+
+function musicFadeOut() {
+  let v = bgMusic.volume;
+  const t = setInterval(() => {
+    if (v > 0) {
+      v -= 0.02;
+      bgMusic.volume = v;
+    } else {
+      bgMusic.pause();
+      clearInterval(t);
+    }
+  }, 40);
+}
 
 // =========================
 // ELEMENTS
 // =========================
 const textEl = document.getElementById("text");
 const choicesEl = document.getElementById("choices");
-const scoreEl = document.getElementById("score");
-const cluesEl = document.getElementById("clues");
-const trustEl = document.getElementById("trust");
-const invEl = document.getElementById("inv");
 
 // =========================
-// TYPEWRITER ENGINE (CLEAN)
+// HUD UPDATE
+// =========================
+function update() {
+  document.getElementById("score").innerText = state.score;
+  document.getElementById("clues").innerText = state.clues;
+  document.getElementById("trust").innerText = state.trust;
+  document.getElementById("inv").innerText =
+    state.inventory.length ? state.inventory.join(", ") : "None";
+}
+
+// =========================
+// TYPEWRITER (CINEMATIC CONTROLLED)
 // =========================
 function typeText(text, cb) {
   textEl.innerHTML = "";
@@ -131,65 +92,174 @@ function typeText(text, cb) {
       clearInterval(interval);
       if (cb) cb();
     }
-  }, 14);
+  }, 16);
 }
 
 // =========================
-// RENDER SCENE
+// CINEMATIC SCENE SWITCH
 // =========================
-function render(sceneId) {
-  const scene = STORY[sceneId];
-  if (!scene) return;
+function scene(text, options = []) {
+  const box = document.getElementById("scene");
 
-  choicesEl.innerHTML = "";
+  // cinematic transition
+  box.classList.add("fade");
 
-  typeText(scene.text, () => {
-    scene.choices.forEach(c => {
-      const btn = document.createElement("button");
-      btn.innerText = c.text;
+  setTimeout(() => {
+    choicesEl.innerHTML = "";
 
-      btn.onclick = () => {
-        if (c.effect) c.effect();
-        updateHUD();
-        render(c.next);
-      };
+    typeText(text, () => {
+      options.forEach(o => {
+        const b = document.createElement("button");
 
-      choicesEl.appendChild(btn);
+        b.innerText = o.text;
+
+        b.onclick = () => {
+          play("click");
+
+          if (o.effect) o.effect();
+          update();
+
+          // tension reaction
+          if (state.tension > 5) {
+            box.style.boxShadow = "0 0 40px rgba(255,0,0,0.2)";
+          }
+
+          o.next();
+        };
+
+        choicesEl.appendChild(b);
+      });
     });
-  });
-}
 
-// =========================
-// HUD UPDATE
-// =========================
-function updateHUD() {
-  scoreEl.innerText = state.score;
-  cluesEl.innerText = state.clues;
-  trustEl.innerText = state.trust;
-  invEl.innerText = state.inventory.join(", ") || "None";
-}
-
-// =========================
-// SAVE / LOAD
-// =========================
-function saveGame() {
-  localStorage.setItem("mira_save", JSON.stringify(state));
-}
-
-function loadGame() {
-  const data = JSON.parse(localStorage.getItem("mira_save"));
-  if (data) state = data;
-  updateHUD();
-  render("start");
+    box.classList.remove("fade");
+  }, 300);
 }
 
 // =========================
 // START GAME
 // =========================
 function startGame() {
-  state = { score: 0, clues: 0, trust: 0, inventory: [] };
-  updateHUD();
-  render("start");
+  state = { score: 0, clues: 0, trust: 0, inventory: [], tension: 0 };
+  update();
+
+  musicFadeIn();
+
+  scene(
+    "🕵️ The museum went dark at 2:13 AM. The diamond vanished. Security systems failed. You arrive as Detective Mira.",
+    [
+      { text: "Enter Kitchen", next: kitchen },
+      { text: "Enter Security Room", next: security },
+      { text: "Enter Garden", next: garden }
+    ]
+  );
+}
+
+// =========================
+// GAME SYSTEMS
+// =========================
+function addTension(x) {
+  state.tension += x;
+
+  if (state.tension > 4) musicFadeIn();
+  if (state.tension > 8) document.body.style.background = "#2a0000";
+}
+
+// =========================
+// LOCATIONS
+// =========================
+function kitchen() {
+  addTension(1);
+
+  scene(
+    "The kitchen is frozen in chaos. Something was dragged across the floor...",
+    [
+      {
+        text: "Search drawer",
+        effect: () => {
+          state.inventory.push("Key");
+          state.clues++;
+        },
+        next: kitchen2
+      },
+      {
+        text: "Leave",
+        next: startGame
+      }
+    ]
+  );
+}
+
+function kitchen2() {
+  scene(
+    "You found a coded key. It may open something important.",
+    [{ text: "Return", next: startGame }]
+  );
+}
+
+function security() {
+  addTension(2);
+
+  scene(
+    "Security system is corrupted. A guard avoids eye contact.",
+    [
+      {
+        text: "Interrogate",
+        effect: () => state.trust++,
+        next: () => {
+          scene(
+            "Guard: 'There were TWO suspects in the garden.'",
+            [{ text: "Go Garden", next: garden }]
+          );
+        }
+      }
+    ]
+  );
+}
+
+function garden() {
+  addTension(4);
+  play("wind");
+
+  scene(
+    "🌫️ The garden feels wrong... colder... like you're being watched.",
+    [
+      {
+        text: "Follow path",
+        next: () => {
+          if (state.inventory.includes("Key") && state.trust > 0) {
+            win();
+          } else {
+            lose();
+          }
+        }
+      },
+      {
+        text: "Call backup",
+        next: win
+      }
+    ]
+  );
+}
+
+// =========================
+// ENDINGS
+// =========================
+function win() {
+  play("win");
+  musicFadeOut();
+
+  scene("🏆 CASE SOLVED — You uncovered the truth behind the diamond theft.", [
+    { text: "Play Again", next: startGame }
+  ]);
+}
+
+function lose() {
+  play("lose");
+  musicFadeOut();
+
+  scene("💀 CASE FAILED — The truth remains hidden in the shadows.", [
+    { text: "Retry Case", next: startGame }
+  ]);
 }
 
 // START
