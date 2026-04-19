@@ -1,288 +1,190 @@
 // =========================
-// SHERLOCK DETECTIVE ENGINE (FIXED)
+// STATE SYSTEM
 // =========================
-
-// -------------------------
-// STATE
-// -------------------------
 let state = {
-  clues: [],
+  score: 0,
+  clues: 0,
   trust: 0,
-  tension: 0,
-  volume: 0.6,
-  location: "start"
+  inventory: []
 };
 
-// -------------------------
+// =========================
 // ELEMENTS
-// -------------------------
+// =========================
 const textEl = document.getElementById("text");
 const choicesEl = document.getElementById("choices");
-const boardEl = document.getElementById("board");
+const scoreEl = document.getElementById("score");
+const cluesEl = document.getElementById("clues");
+const trustEl = document.getElementById("trust");
+const invEl = document.getElementById("inv");
 
-// -------------------------
-// 🔊 SOUND SYSTEM (FIXED FOR "sound/")
-// -------------------------
-function play(file) {
-  const audio = new Audio("sound/" + file);
-  audio.volume = state.volume;
-  audio.play().catch(() => {});
-}
+// =========================
+// SAFE TYPEWRITER ENGINE
+// =========================
+let typing = false;
 
-// volume slider
-document.getElementById("volume").addEventListener("input", e => {
-  state.volume = parseFloat(e.target.value);
-});
-
-// -------------------------
-// TYPEWRITER EFFECT
-// -------------------------
-function type(text, cb) {
+function typeText(text, cb) {
+  typing = true;
   textEl.innerHTML = "";
-  let i = 0;
 
-  const t = setInterval(() => {
+  let i = 0;
+  const interval = setInterval(() => {
     textEl.innerHTML += text[i];
     i++;
     if (i >= text.length) {
-      clearInterval(t);
-      cb && cb();
+      clearInterval(interval);
+      typing = false;
+      if (cb) cb();
     }
   }, 15);
 }
 
-// -------------------------
+// =========================
+// UI UPDATE
+// =========================
+function update() {
+  scoreEl.innerText = state.score;
+  cluesEl.innerText = state.clues;
+  trustEl.innerText = state.trust;
+  invEl.innerText = state.inventory.length ? state.inventory.join(", ") : "None";
+}
+
+// =========================
 // SCENE ENGINE
-// -------------------------
+// =========================
 function scene(text, options = []) {
   choicesEl.innerHTML = "";
 
-  type(text, () => {
+  typeText(text, () => {
     options.forEach(o => {
-      const btn = document.createElement("button");
-      btn.innerText = o.text;
+      const b = document.createElement("button");
+      b.innerText = o.text;
 
-      btn.onclick = () => {
-        play("click.mp3");
-
+      b.onclick = () => {
         if (o.effect) o.effect();
-
-        updateHUD();
+        update();
         o.next();
       };
 
-      choicesEl.appendChild(btn);
+      choicesEl.appendChild(b);
     });
   });
 }
 
-// -------------------------
-// HUD + BOARD
-// -------------------------
-function updateHUD() {
-  document.getElementById("clueCount").innerText = state.clues.length;
-  document.getElementById("trust").innerText = state.trust;
-  document.getElementById("tension").innerText = state.tension;
-
-  renderBoard();
-}
-
-function renderBoard() {
-  boardEl.innerHTML = "";
-
-  state.clues.forEach(c => {
-    const li = document.createElement("li");
-    li.innerText = "🧩 " + c;
-    boardEl.appendChild(li);
-  });
-}
-
-// -------------------------
-// CLUE SYSTEM
-// -------------------------
-function addClue(text) {
-  state.clues.push(text);
-  play("clue.mp3");
-}
-
-// -------------------------
-// TENSION SYSTEM
-// -------------------------
-function tension(n) {
-  state.tension += n;
-
-  if (state.tension > 3) {
-    document.body.style.background = "#1a0000";
-  }
-
-  if (state.tension > 6) {
-    document.body.style.filter = "contrast(1.3)";
-  }
-}
-
-// -------------------------
-// MAP SYSTEM
-// -------------------------
-function go(loc) {
-  play("click.mp3");
-
-  state.location = loc;
-
-  if (loc === "kitchen") kitchen();
-  if (loc === "security") security();
-  if (loc === "garden") garden();
-  if (loc === "vault") vault();
-}
-
-// -------------------------
-// START GAME
-// -------------------------
-function startGame() {
-  state = {
-    clues: [],
-    trust: 0,
-    tension: 0,
-    volume: state.volume,
-    location: "start"
-  };
-
-  updateHUD();
+// =========================
+// START
+// =========================
+function start() {
+  state = { score: 0, clues: 0, trust: 0, inventory: [] };
+  update();
 
   scene(
-    "🕵️ Sherlock Holmes arrives. A diamond has vanished from the museum under impossible circumstances.",
+    "🕵️ The diamond is missing. The museum is locked. Three locations are available.",
     [
-      { text: "🍽️ Kitchen Wing", next: () => kitchen() },
-      { text: "🖥️ Security Room", next: () => security() },
-      { text: "🌿 Garden", next: () => garden() }
+      { text: "🍪 Kitchen", next: kitchen },
+      { text: "🖥️ Security Room", next: security },
+      { text: "🌿 Garden", next: garden }
     ]
   );
 }
 
-// -------------------------
-// LOCATIONS
-// -------------------------
+// =========================
+// KITCHEN
+// =========================
 function kitchen() {
-  tension(1);
-
   scene(
-    "🍽️ Kitchen Wing — something was disturbed here.",
+    "The kitchen is messy. Something was dragged across the floor.",
     [
       {
-        text: "🔍 Inspect floor",
-        effect: () => addClue("Chemical residue near fridge"),
-        next: kitchen2
+        text: "Search drawers",
+        effect: () => state.clues++,
+        next: () => {
+          state.inventory.push("Key");
+          update();
+          kitchen2();
+        }
       },
       {
-        text: "📦 Search drawers",
-        effect: () => addClue("Hidden key fragment found"),
-        next: kitchen2
-      },
-      {
-        text: "🧍 Question chef",
-        effect: () => {
-          state.trust++;
-          addClue("Chef saw unknown figure at 2 AM");
-        },
-        next: kitchen2
-      },
-      {
-        text: "🗺️ Go Map",
-        next: startGame
+        text: "Leave",
+        next: start
       }
     ]
   );
 }
 
 function kitchen2() {
-  scene("The kitchen feels colder now... like something is missing.", [
-    { text: "Continue", next: startGame }
-  ]);
+  scene(
+    "You found a strange key. It might open something important.",
+    [
+      { text: "Return", next: start }
+    ]
+  );
 }
 
-// -------------------------
+// =========================
+// SECURITY
+// =========================
 function security() {
-  tension(2);
-
   scene(
-    "🖥️ Security Room — all footage has been wiped.",
+    "Monitors flicker. A guard avoids eye contact.",
     [
       {
-        text: "Analyze logs",
-        effect: () => addClue("Security system manually disabled"),
-        next: security2
+        text: "Interrogate",
+        effect: () => state.trust++,
+        next: () => {
+          scene(
+            "Guard: 'I saw someone go to the garden.'",
+            [{ text: "Go garden", next: garden }]
+          );
+        }
       },
       {
-        text: "Interrogate guard",
-        effect: () => {
-          state.trust++;
-          addClue("Guard saw 2 suspects in garden");
-        },
-        next: security2
+        text: "Hack system",
+        next: () => lose("Alarm triggered. Investigation failed.")
       }
     ]
   );
 }
 
-function security2() {
-  scene("Someone inside the museum helped the thief...", [
-    { text: "Go Garden", next: garden }
-  ]);
-}
-
-// -------------------------
+// =========================
+// GARDEN
+// =========================
 function garden() {
-  tension(3);
-
   scene(
-    "🌿 Garden — silence is unnatural... something is watching.",
-    [
-      { text: "Follow footprints", next: finalCase },
-      { text: "Wait silently", next: finalCase }
-    ]
-  );
-}
-
-// -------------------------
-// FINAL DEDUCTION
-// -------------------------
-function finalCase() {
-  scene(
-    "🧠 Sherlock analyzes all evidence...",
+    "Fog covers the garden. Two paths appear.",
     [
       {
-        text: "Accuse suspect",
+        text: "Follow path",
         next: () => {
-          if (state.clues.length >= 3) {
-            win();
+          if (state.trust > 0 && state.inventory.includes("Key")) {
+            win("You solved the case using all evidence 🏆");
           } else {
-            lose();
+            lose("You were tricked. Wrong path.");
           }
         }
+      },
+      {
+        text: "Call backup",
+        next: () => win("Backup arrives. Case solved professionally 🚔")
       }
     ]
   );
 }
 
-// -------------------------
+// =========================
 // ENDINGS
-// -------------------------
-function win() {
-  play("win.mp3");
-
-  scene("🏆 CASE SOLVED — Sherlock exposes the hidden conspiracy behind the theft.", [
-    { text: "Play Again", next: startGame }
+// =========================
+function win(msg) {
+  scene("🏆 " + msg, [
+    { text: "Play Again", next: start }
   ]);
 }
 
-function lose() {
-  play("lose.mp3");
-
-  scene("💀 CASE FAILED — the real culprit escapes into the shadows.", [
-    { text: "Retry Case", next: startGame }
+function lose(msg) {
+  scene("💀 " + msg, [
+    { text: "Restart", next: start }
   ]);
 }
 
-// -------------------------
-// BOOT GAME
-// -------------------------
-startGame();
+// START GAME
+start();
