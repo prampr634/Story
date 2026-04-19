@@ -1,38 +1,38 @@
-<div id="screen">
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Open World Detective Engine</title>
+  <link rel="stylesheet" href="style.css">
+</head>
 
-  <div id="topbar">
-    🕵️ Sherlock Case File
-    <span id="stats">
-      Clues: <span id="clueCount">0</span> |
-      Trust: <span id="trust">0</span> |
-      Tension: <span id="tension">0</span>
-    </span>
+<body>
+
+<div id="hud">
+  🕵️ Clues: <span id="clueCount">0</span>
+</div>
+
+<div id="world">
+
+  <div id="map">
+    <button onclick="travel('museum')">🏛️ Museum</button>
+    <button onclick="travel('alley')">🌑 Alley</button>
+    <button onclick="travel('station')">🚉 Station</button>
+    <button onclick="travel('house')">🏠 Suspect House</button>
   </div>
 
-  <div id="scene">
+  <div id="location">
+    <h2 id="locName"></h2>
+    <div id="npc"></div>
     <div id="text"></div>
     <div id="choices"></div>
   </div>
 
-  <div id="ui">
-
-    <div class="panel">
-      <h3>🗺️ Locations</h3>
-      <button onclick="go('kitchen')">Kitchen</button>
-      <button onclick="go('security')">Security</button>
-      <button onclick="go('garden')">Garden</button>
-      <button onclick="go('vault')">Vault</button>
-    </div>
-
-    <div class="panel">
-      <h3>🧠 Evidence File</h3>
-      <ul id="board"></ul>
-    </div>
-
-  </div>
-
-  <div id="fade"></div>
+  <div id="board"></div>
 
 </div>
 
 <script src="script.js"></script>
+
+</body>
+</html>
