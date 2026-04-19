@@ -1,75 +1,87 @@
 body {
   margin: 0;
   font-family: Georgia, serif;
-  color: #f2f2f2;
-  overflow: hidden;
-
-  /* CINEMATIC DETECTIVE BACKGROUND */
-  background:
-    radial-gradient(circle at 20% 20%, rgba(80, 120, 180, 0.25), transparent 55%),
-    radial-gradient(circle at 80% 70%, rgba(20, 30, 60, 0.4), transparent 60%),
-    radial-gradient(circle at center, #05070d, #02030a);
+  background: #0b0f1a;
+  color: white;
 }
 
-/* subtle film grain overlay */
-body::before {
-  content: "";
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-
-  background-image: url("https://www.transparenttextures.com/patterns/noise.png");
-  opacity: 0.08;
-  mix-blend-mode: overlay;
+/* HUD */
+#hud {
+  padding: 10px;
+  background: rgba(0,0,0,0.6);
 }
 
-/* vignette edges (cinematic focus) */
-body::after {
-  content: "";
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-
-  background: radial-gradient(
-    circle,
-    transparent 40%,
-    rgba(0,0,0,0.6) 100%
-  );
+/* WORLD LAYOUT */
+#world {
+  display: flex;
+  height: 100vh;
 }
 
-/* MAIN TEXT PANEL IMPROVEMENT */
-#location {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
-  padding: 20px;
-  backdrop-filter: blur(6px);
-}
-
-/* BUTTONS FEEL MORE AAA */
-button {
-  border-radius: 10px;
-  transition: 0.2s ease;
-  letter-spacing: 0.5px;
-}
-
-button:hover {
-  transform: scale(1.03);
-  background: #2c3855;
-}
-
-/* MAP PANEL LOOK BETTER */
+/* MAP */
 #map {
-  background: rgba(255,255,255,0.03);
-  border-right: 1px solid rgba(255,255,255,0.08);
+  width: 200px;
+  padding: 10px;
+  background: #111827;
 }
 
-/* CLUE BOARD IMPROVEMENT */
+#map button {
+  width: 100%;
+  margin: 6px 0;
+  padding: 10px;
+  background: #1c2233;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+#map button:hover {
+  background: #2a3550;
+}
+
+/* MAIN LOCATION AREA */
+#location {
+  flex: 1;
+  padding: 20px;
+}
+
+/* TEXT */
+#text {
+  margin-top: 10px;
+  font-size: 18px;
+}
+
+/* NPC NAME */
+#npc {
+  color: #ffd479;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+/* CHOICES */
+button.choice {
+  display: block;
+  margin: 6px 0;
+  padding: 10px;
+  width: 320px;
+  background: #1c2233;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+button.choice:hover {
+  background: #2a3550;
+}
+
+/* EVIDENCE BOARD */
 #board {
-  background: rgba(255,255,255,0.03);
-  border-left: 1px solid rgba(255,255,255,0.08);
+  width: 220px;
+  padding: 10px;
+  background: #111827;
+}
+
+#board div {
+  padding: 6px;
+  margin: 4px 0;
+  background: rgba(255,255,255,0.05);
 }
