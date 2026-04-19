@@ -1,22 +1,21 @@
- // =========================
-// SOUND SYSTEM
+// =========================
+// SOUND SYSTEM (FIXED: song/)
 // =========================
 const sounds = {
-  click: new Audio("sound/click.mp3"),
-  win: new Audio("sound/win.mp3"),
-  lose: new Audio("sound/lose.mp3"),
-  tension: new Audio("sound/tension.mp3"),
-  clue: new Audio("sound/clue.mp3")
+  click: new Audio("song/click.mp3"),
+  win: new Audio("song/win.mp3"),
+  lose: new Audio("song/lose.mp3"),
+  tension: new Audio("song/tension.mp3"),
+  clue: new Audio("song/clue.mp3")
 };
 
-function playSound(name) {
+sounds.tension.loop = true;
+
+function play(name) {
   if (!sounds[name]) return;
   sounds[name].currentTime = 0;
-  sounds[name].play();
+  sounds[name].play().catch(()=>{});
 }
-
-// loop tension music
-sounds.tension.loop = true;
 
 // =========================
 // STATE
@@ -42,7 +41,7 @@ const trustEl = document.getElementById("trust");
 let typing = false;
 
 // =========================
-// TYPE ENGINE
+// TYPEWRITER
 // =========================
 function typeText(text, cb) {
   typing = true;
@@ -55,9 +54,9 @@ function typeText(text, cb) {
     if (i >= text.length) {
       clearInterval(interval);
       typing = false;
-      if (cb) cb();
+      cb && cb();
     }
-  }, 10);
+  }, 12);
 }
 
 // =========================
@@ -69,29 +68,32 @@ function update() {
 }
 
 // =========================
-// SAFE SCENE ENGINE
+// ENGINE (NO DEAD BUTTONS EVER)
 // =========================
 function scene(text, options = []) {
   choicesEl.innerHTML = "";
 
   typeText(text, () => {
     options.forEach(o => {
-      const btn = document.createElement("button");
-      btn.innerText = o.text;
+      const b = document.createElement("button");
+      b.innerText = o.text;
 
-      btn.onclick = () => {
+      b.onclick = () => {
         if (typing) return;
 
-        playSound("click");
+        play("click");
 
         if (o.effect) o.effect();
         update();
 
-        if (o.next) o.next();
-        else hub();
+        if (typeof o.next === "function") {
+          o.next();
+        } else {
+          hub();
+        }
       };
 
-      choicesEl.appendChild(btn);
+      choicesEl.appendChild(b);
     });
   });
 }
@@ -108,23 +110,39 @@ function start() {
 
   sounds.tension.pause();
   update();
-  hub();
+  intro();
 }
 
 // =========================
-// HUB
+// INTRO (NEW)
+// =========================
+function intro() {
+  scene(
+    "🌙 Midnight. The museum is sealed. The diamond is gone. No signs of forced entry.",
+    [
+      {
+        text: "Enter investigation",
+        next: hub
+      }
+    ]
+  );
+}
+
+// =========================
+// HUB (ALWAYS MULTIPLE OPTIONS)
 // =========================
 function hub() {
-  sounds.tension.play();
+  sounds.tension.play().catch(()=>{});
 
   scene(
-    "🕵️ The diamond is missing. The museum is locked. Every move matters.",
+    "🕵️ Choose your next move carefully.",
     [
-      { text: "🏛️ Museum", next: museum },
-      { text: "🖥️ Security", next: security },
+      { text: "🏛️ Museum Hall", next: museum },
+      { text: "🖥️ Security Room", next: security },
       { text: "🍪 Kitchen", next: kitchen },
       { text: "🌿 Garden", next: garden },
-      { text: "📓 Deduction Board", next: deductionBoard }
+      { text: "🧍 Interrogate Suspects", next: suspects },
+      { text: "📓 Deduction Board", next: deduction }
     ]
   );
 }
@@ -134,19 +152,23 @@ function hub() {
 // =========================
 function museum() {
   scene(
-    "The glass case is shattered from inside.",
+    "Glass shattered inward. This was staged.",
     [
       {
-        text: "Inspect glass",
+        text: "Analyze glass pattern",
         effect: () => {
-          state.clues.push("Inside break");
-          playSound("clue");
+          state.clues.push("Inside job");
+          play("clue");
         },
         next: museum2
       },
       {
-        text: "Talk guard",
-        next: guard
+        text: "Search floor",
+        effect: () => {
+          state.clues.push("Footprints");
+          play("clue");
+        },
+        next: garden
       },
       { text: "Return", next: hub }
     ]
@@ -155,38 +177,11 @@ function museum() {
 
 function museum2() {
   scene(
-    "This was not a forced entry… someone inside did this.",
+    "The break confirms internal access.",
     [
-      { text: "Go security", next: security },
+      { text: "Check security logs", next: security },
+      { text: "Interrogate guard", next: guard },
       { text: "Return", next: hub }
-    ]
-  );
-}
-
-// =========================
-// GUARD
-// =========================
-function guard() {
-  scene(
-    "Guard looks nervous.",
-    [
-      {
-        text: "Press him",
-        effect: () => {
-          state.suspicion.guard += 2;
-          state.trust++;
-        },
-        next: () => {
-          scene("Guard: 'I… I didn’t mean to…'", [
-            { text: "Return", next: hub }
-          ]);
-        }
-      },
-      {
-        text: "Observe silently",
-        effect: () => state.suspicion.guard++,
-        next: hub
-      }
     ]
   );
 }
@@ -196,18 +191,18 @@ function guard() {
 // =========================
 function security() {
   scene(
-    "Camera feed is missing at the exact moment.",
+    "Footage missing exactly at 2:14 AM.",
     [
       {
-        text: "Check logs",
+        text: "Recover logs",
         effect: () => {
           state.clues.push("Override used");
-          playSound("clue");
+          play("clue");
         },
         next: security2
       },
       {
-        text: "Check technician",
+        text: "Inspect system",
         effect: () => state.suspicion.technician += 2,
         next: hub
       },
@@ -218,9 +213,9 @@ function security() {
 
 function security2() {
   scene(
-    "System was manually overridden.",
+    "Manual override. Someone knew the system.",
     [
-      { text: "Go garden", next: garden },
+      { text: "Go to suspects", next: suspects },
       { text: "Return", next: hub }
     ]
   );
@@ -231,34 +226,30 @@ function security2() {
 // =========================
 function kitchen() {
   scene(
-    "Strong bleach smell fills the room.",
+    "Strong bleach smell. Something was cleaned.",
     [
       {
         text: "Search sink",
         effect: () => {
-          state.clues.push("Cleanup evidence");
-          playSound("clue");
+          state.clues.push("Cleanup");
+          play("clue");
         },
-        next: hub
+        next: kitchen2
       },
       {
         text: "Talk chef",
-        effect: () => state.suspicion.chef++,
         next: chef
-      }
+      },
+      { text: "Return", next: hub }
     ]
   );
 }
 
-function chef() {
+function kitchen2() {
   scene(
-    "Chef: 'I only cook… I swear.'",
+    "Someone erased evidence quickly.",
     [
-      {
-        text: "Accuse chef",
-        effect: () => state.suspicion.chef += 2,
-        next: hub
-      },
+      { text: "Go to suspects", next: suspects },
       { text: "Return", next: hub }
     ]
   );
@@ -269,13 +260,13 @@ function chef() {
 // =========================
 function garden() {
   scene(
-    "Fog covers the ground.",
+    "Fog hides movement.",
     [
       {
         text: "Follow footprints",
         effect: () => {
           state.clues.push("Escape route");
-          playSound("clue");
+          play("clue");
         },
         next: hub
       },
@@ -283,7 +274,44 @@ function garden() {
         text: "Search bushes",
         effect: () => {
           state.clues.push("Hidden stash");
-          playSound("clue");
+          play("clue");
+        },
+        next: hub
+      },
+      { text: "Return", next: hub }
+    ]
+  );
+}
+
+// =========================
+// SUSPECT SYSTEM (NEW BIG FEATURE)
+// =========================
+function suspects() {
+  scene(
+    "Choose who to interrogate:",
+    [
+      { text: "Guard", next: guard },
+      { text: "Chef", next: chef },
+      { text: "Technician", next: technician },
+      { text: "Return", next: hub }
+    ]
+  );
+}
+
+function guard() {
+  scene(
+    "Guard looks nervous.",
+    [
+      {
+        text: "Accuse",
+        effect: () => state.suspicion.guard += 2,
+        next: hub
+      },
+      {
+        text: "Pressure him",
+        effect: () => {
+          state.suspicion.guard++;
+          state.trust++;
         },
         next: hub
       }
@@ -291,10 +319,38 @@ function garden() {
   );
 }
 
+function chef() {
+  scene(
+    "Chef avoids eye contact.",
+    [
+      {
+        text: "Accuse",
+        effect: () => state.suspicion.chef += 2,
+        next: hub
+      },
+      { text: "Return", next: hub }
+    ]
+  );
+}
+
+function technician() {
+  scene(
+    "Technician knows the system well.",
+    [
+      {
+        text: "Accuse",
+        effect: () => state.suspicion.technician += 2,
+        next: hub
+      },
+      { text: "Return", next: hub }
+    ]
+  );
+}
+
 // =========================
-// DEDUCTION BOARD
+// DEDUCTION
 // =========================
-function deductionBoard() {
+function deduction() {
   let suspect = "None";
 
   if (state.suspicion.guard >= 3) suspect = "Guard";
@@ -305,7 +361,7 @@ function deductionBoard() {
     `📓 CLUES: ${state.clues.length}\nTOP SUSPECT: ${suspect}`,
     [
       {
-        text: "Make Arrest",
+        text: "Make Final Accusation",
         next: () => ending(suspect)
       },
       { text: "Return", next: hub }
@@ -320,20 +376,14 @@ function ending(suspect) {
   sounds.tension.pause();
 
   if (suspect === "Guard") {
-    playSound("win");
-    scene("🏆 You solved the case. The guard confesses.", [
-      { text: "Restart", next: start }
-    ]);
+    play("win");
+    scene("🏆 Guard confesses. Case solved.", [{ text: "Restart", next: start }]);
   } else if (suspect === "Technician") {
-    playSound("win");
-    scene("🧠 Technician planned everything. Genius capture.", [
-      { text: "Restart", next: start }
-    ]);
+    play("win");
+    scene("🧠 Technician planned everything.", [{ text: "Restart", next: start }]);
   } else {
-    playSound("lose");
-    scene("💀 Wrong suspect. The real thief escapes.", [
-      { text: "Restart", next: start }
-    ]);
+    play("lose");
+    scene("💀 Wrong choice. The thief escapes.", [{ text: "Restart", next: start }]);
   }
 }
 
