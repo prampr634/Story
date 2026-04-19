@@ -1,12 +1,13 @@
 body {
   margin: 0;
   font-family: Arial;
-  background: radial-gradient(circle at top, #0b1020, #05060f);
+  background: radial-gradient(circle at top, #0a0f1f, #02030a);
   color: white;
+  overflow-x: hidden;
 }
 
 .app {
-  max-width: 800px;
+  max-width: 850px;
   margin: auto;
   padding: 20px;
   text-align: center;
@@ -25,17 +26,25 @@ body {
 
 .scene {
   margin-top: 40px;
-  padding: 25px;
-  background: rgba(255,255,255,0.05);
+  padding: 30px;
   border-radius: 20px;
-  min-height: 220px;
-  transition: 0.4s;
+  background: rgba(255,255,255,0.05);
+  min-height: 240px;
+  transition: all 0.5s ease;
+  position: relative;
+}
+
+/* cinematic fade */
+.fade {
+  opacity: 0;
+  transform: scale(0.98);
+  filter: blur(8px);
 }
 
 #text {
   font-size: 22px;
+  line-height: 1.6;
   min-height: 90px;
-  line-height: 1.5;
 }
 
 button {
@@ -52,11 +61,13 @@ button:hover {
   background: #818cf8;
 }
 
-.bottom {
-  margin-top: 15px;
+.inventory {
+  margin-top: 10px;
   opacity: 0.8;
 }
 
-.buttons {
+.audio-ui {
   margin-top: 10px;
+  font-size: 13px;
+  opacity: 0.8;
 }
