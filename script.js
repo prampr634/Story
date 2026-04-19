@@ -1,5 +1,5 @@
 // =========================
-// SOUND SYSTEM (FIXED: song/)
+// SOUND (song/ folder)
 // =========================
 const sounds = {
   click: new Audio("song/click.mp3"),
@@ -11,10 +11,10 @@ const sounds = {
 
 sounds.tension.loop = true;
 
-function play(name) {
-  if (!sounds[name]) return;
-  sounds[name].currentTime = 0;
-  sounds[name].play().catch(()=>{});
+function play(s) {
+  if (!sounds[s]) return;
+  sounds[s].currentTime = 0;
+  sounds[s].play().catch(()=>{});
 }
 
 // =========================
@@ -22,12 +22,9 @@ function play(name) {
 // =========================
 let state = {
   clues: [],
-  trust: 0,
-  suspicion: {
-    guard: 0,
-    chef: 0,
-    technician: 0
-  }
+  suspectsUnlocked: false,
+  powerOn: true,
+  keycard: false
 };
 
 // =========================
@@ -41,7 +38,7 @@ const trustEl = document.getElementById("trust");
 let typing = false;
 
 // =========================
-// TYPEWRITER
+// TYPE EFFECT
 // =========================
 function typeText(text, cb) {
   typing = true;
@@ -64,11 +61,10 @@ function typeText(text, cb) {
 // =========================
 function update() {
   cluesEl.innerText = state.clues.length;
-  trustEl.innerText = state.trust;
 }
 
 // =========================
-// ENGINE (NO DEAD BUTTONS EVER)
+// ENGINE (NO DEAD BUTTONS)
 // =========================
 function scene(text, options = []) {
   choicesEl.innerHTML = "";
@@ -86,11 +82,8 @@ function scene(text, options = []) {
         if (o.effect) o.effect();
         update();
 
-        if (typeof o.next === "function") {
-          o.next();
-        } else {
-          hub();
-        }
+        if (o.next) o.next();
+        else intro();
       };
 
       choicesEl.appendChild(b);
@@ -104,267 +97,263 @@ function scene(text, options = []) {
 function start() {
   state = {
     clues: [],
-    trust: 0,
-    suspicion: { guard: 0, chef: 0, technician: 0 }
+    suspectsUnlocked: false,
+    powerOn: true,
+    keycard: false
   };
 
-  sounds.tension.pause();
-  update();
+  sounds.tension.play().catch(()=>{});
   intro();
 }
 
 // =========================
-// INTRO (NEW)
+// INTRO
 // =========================
 function intro() {
   scene(
-    "🌙 Midnight. The museum is sealed. The diamond is gone. No signs of forced entry.",
+    "🌙 The lights suddenly cut out. Darkness swallows the museum. When power returns… the diamond is gone.",
+    [
+      { text: "Enter the museum", next: lobby }
+    ]
+  );
+}
+
+// =========================
+// LOBBY (MAIN HUB BUT PROGRESSIVE)
+// =========================
+function lobby() {
+  let options = [
+    { text: "🔌 Investigate blackout", next: electricalRoom },
+    { text: "🏛️ Check exhibit hall", next: exhibit }
+  ];
+
+  if (state.keycard) {
+    options.push({ text: "🚪 Open locked door", next: vault });
+  }
+
+  if (state.suspectsUnlocked) {
+    options.push({ text: "🧍 Interrogate suspects", next: suspects });
+  }
+
+  scene("The museum feels… off. Something happened during the blackout.", options);
+}
+
+// =========================
+// ELECTRICAL ROOM
+// =========================
+function electricalRoom() {
+  scene(
+    "The breaker panel is open. Someone forced a shutdown.",
     [
       {
-        text: "Enter investigation",
-        next: hub
+        text: "Inspect panel",
+        effect: () => {
+          state.clues.push("Power sabotage");
+          play("clue");
+        },
+        next: electrical2
+      },
+      {
+        text: "Follow cable trail",
+        next: storage
+      }
+    ]
+  );
+}
+
+function electrical2() {
+  scene(
+    "This wasn’t random. It was planned.",
+    [
+      {
+        text: "Return to lobby",
+        next: lobby
       }
     ]
   );
 }
 
 // =========================
-// HUB (ALWAYS MULTIPLE OPTIONS)
+// STORAGE (NEW PATH)
 // =========================
-function hub() {
-  sounds.tension.play().catch(()=>{});
-
+function storage() {
   scene(
-    "🕵️ Choose your next move carefully.",
+    "You find a dropped keycard.",
     [
-      { text: "🏛️ Museum Hall", next: museum },
-      { text: "🖥️ Security Room", next: security },
-      { text: "🍪 Kitchen", next: kitchen },
-      { text: "🌿 Garden", next: garden },
-      { text: "🧍 Interrogate Suspects", next: suspects },
-      { text: "📓 Deduction Board", next: deduction }
+      {
+        text: "Pick it up",
+        effect: () => {
+          state.keycard = true;
+          state.clues.push("Keycard");
+          play("clue");
+        },
+        next: storage2
+      }
+    ]
+  );
+}
+
+function storage2() {
+  scene(
+    "This unlocks restricted areas…",
+    [
+      {
+        text: "Return to lobby",
+        next: lobby
+      }
     ]
   );
 }
 
 // =========================
-// MUSEUM
+// EXHIBIT
 // =========================
-function museum() {
+function exhibit() {
   scene(
-    "Glass shattered inward. This was staged.",
+    "The glass case is shattered inward.",
     [
       {
-        text: "Analyze glass pattern",
+        text: "Analyze glass",
         effect: () => {
           state.clues.push("Inside job");
           play("clue");
         },
-        next: museum2
+        next: exhibit2
       },
       {
         text: "Search floor",
-        effect: () => {
-          state.clues.push("Footprints");
-          play("clue");
-        },
-        next: garden
-      },
-      { text: "Return", next: hub }
-    ]
-  );
-}
-
-function museum2() {
-  scene(
-    "The break confirms internal access.",
-    [
-      { text: "Check security logs", next: security },
-      { text: "Interrogate guard", next: guard },
-      { text: "Return", next: hub }
-    ]
-  );
-}
-
-// =========================
-// SECURITY
-// =========================
-function security() {
-  scene(
-    "Footage missing exactly at 2:14 AM.",
-    [
-      {
-        text: "Recover logs",
-        effect: () => {
-          state.clues.push("Override used");
-          play("clue");
-        },
-        next: security2
-      },
-      {
-        text: "Inspect system",
-        effect: () => state.suspicion.technician += 2,
-        next: hub
-      },
-      { text: "Return", next: hub }
-    ]
-  );
-}
-
-function security2() {
-  scene(
-    "Manual override. Someone knew the system.",
-    [
-      { text: "Go to suspects", next: suspects },
-      { text: "Return", next: hub }
-    ]
-  );
-}
-
-// =========================
-// KITCHEN
-// =========================
-function kitchen() {
-  scene(
-    "Strong bleach smell. Something was cleaned.",
-    [
-      {
-        text: "Search sink",
-        effect: () => {
-          state.clues.push("Cleanup");
-          play("clue");
-        },
-        next: kitchen2
-      },
-      {
-        text: "Talk chef",
-        next: chef
-      },
-      { text: "Return", next: hub }
-    ]
-  );
-}
-
-function kitchen2() {
-  scene(
-    "Someone erased evidence quickly.",
-    [
-      { text: "Go to suspects", next: suspects },
-      { text: "Return", next: hub }
-    ]
-  );
-}
-
-// =========================
-// GARDEN
-// =========================
-function garden() {
-  scene(
-    "Fog hides movement.",
-    [
-      {
-        text: "Follow footprints",
-        effect: () => {
-          state.clues.push("Escape route");
-          play("clue");
-        },
-        next: hub
-      },
-      {
-        text: "Search bushes",
-        effect: () => {
-          state.clues.push("Hidden stash");
-          play("clue");
-        },
-        next: hub
-      },
-      { text: "Return", next: hub }
-    ]
-  );
-}
-
-// =========================
-// SUSPECT SYSTEM (NEW BIG FEATURE)
-// =========================
-function suspects() {
-  scene(
-    "Choose who to interrogate:",
-    [
-      { text: "Guard", next: guard },
-      { text: "Chef", next: chef },
-      { text: "Technician", next: technician },
-      { text: "Return", next: hub }
-    ]
-  );
-}
-
-function guard() {
-  scene(
-    "Guard looks nervous.",
-    [
-      {
-        text: "Accuse",
-        effect: () => state.suspicion.guard += 2,
-        next: hub
-      },
-      {
-        text: "Pressure him",
-        effect: () => {
-          state.suspicion.guard++;
-          state.trust++;
-        },
-        next: hub
+        next: footprints
       }
     ]
   );
 }
 
-function chef() {
+function exhibit2() {
   scene(
-    "Chef avoids eye contact.",
+    "This confirms: someone inside did it.",
     [
       {
-        text: "Accuse",
-        effect: () => state.suspicion.chef += 2,
-        next: hub
-      },
-      { text: "Return", next: hub }
-    ]
-  );
-}
-
-function technician() {
-  scene(
-    "Technician knows the system well.",
-    [
-      {
-        text: "Accuse",
-        effect: () => state.suspicion.technician += 2,
-        next: hub
-      },
-      { text: "Return", next: hub }
+        text: "Return to lobby",
+        next: lobby
+      }
     ]
   );
 }
 
 // =========================
-// DEDUCTION
+// FOOTPRINT PATH (NO HUB RETURN)
 // =========================
-function deduction() {
-  let suspect = "None";
-
-  if (state.suspicion.guard >= 3) suspect = "Guard";
-  else if (state.suspicion.technician >= 3) suspect = "Technician";
-  else if (state.suspicion.chef >= 3) suspect = "Chef";
-
+function footprints() {
   scene(
-    `📓 CLUES: ${state.clues.length}\nTOP SUSPECT: ${suspect}`,
+    "Footprints lead outside into the garden.",
     [
       {
-        text: "Make Final Accusation",
-        next: () => ending(suspect)
+        text: "Follow them",
+        next: garden
+      }
+    ]
+  );
+}
+
+// =========================
+// GARDEN (NOW CONTINUES STORY)
+// =========================
+function garden() {
+  scene(
+    "You see movement. Someone is hiding.",
+    [
+      {
+        text: "Chase figure",
+        next: chase
       },
-      { text: "Return", next: hub }
+      {
+        text: "Search bushes carefully",
+        effect: () => {
+          state.clues.push("Hidden bag");
+          play("clue");
+        },
+        next: revealSuspects
+      }
+    ]
+  );
+}
+
+function chase() {
+  scene(
+    "The figure escapes… but drops something.",
+    [
+      {
+        text: "Pick it up",
+        effect: () => {
+          state.clues.push("Suspicious tool");
+          play("clue");
+        },
+        next: revealSuspects
+      }
+    ]
+  );
+}
+
+// =========================
+// UNLOCK SUSPECT SYSTEM
+// =========================
+function revealSuspects() {
+  state.suspectsUnlocked = true;
+
+  scene(
+    "This is bigger than you thought. Multiple people were involved.",
+    [
+      {
+        text: "Return to lobby",
+        next: lobby
+      }
+    ]
+  );
+}
+
+// =========================
+// VAULT (LOCKED AREA)
+// =========================
+function vault() {
+  scene(
+    "You enter a hidden vault room… files everywhere.",
+    [
+      {
+        text: "Read files",
+        effect: () => {
+          state.clues.push("Inside conspiracy");
+          play("clue");
+        },
+        next: finalDecision
+      }
+    ]
+  );
+}
+
+// =========================
+// SUSPECTS
+// =========================
+function suspects() {
+  scene(
+    "Three suspects stand before you.",
+    [
+      { text: "Accuse Guard", next: () => ending("guard") },
+      { text: "Accuse Technician", next: () => ending("technician") },
+      { text: "Accuse Chef", next: () => ending("chef") }
+    ]
+  );
+}
+
+// =========================
+// FINAL DECISION
+// =========================
+function finalDecision() {
+  scene(
+    "You now have enough evidence. Who is the mastermind?",
+    [
+      { text: "Accuse Guard", next: () => ending("guard") },
+      { text: "Accuse Technician", next: () => ending("technician") },
+      { text: "Accuse Chef", next: () => ending("chef") }
     ]
   );
 }
@@ -375,15 +364,16 @@ function deduction() {
 function ending(suspect) {
   sounds.tension.pause();
 
-  if (suspect === "Guard") {
+  if (suspect === "technician" && state.clues.includes("Power sabotage")) {
     play("win");
-    scene("🏆 Guard confesses. Case solved.", [{ text: "Restart", next: start }]);
-  } else if (suspect === "Technician") {
-    play("win");
-    scene("🧠 Technician planned everything.", [{ text: "Restart", next: start }]);
+    scene("🏆 You exposed the technician’s blackout plan. Perfect solve.", [
+      { text: "Play again", next: start }
+    ]);
   } else {
     play("lose");
-    scene("💀 Wrong choice. The thief escapes.", [{ text: "Restart", next: start }]);
+    scene("💀 Wrong choice. The real thief escapes in the chaos.", [
+      { text: "Retry case", next: start }
+    ]);
   }
 }
 
