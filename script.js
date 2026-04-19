@@ -1,151 +1,124 @@
-// =========================
+// =======================
 // STATE
-// =========================
+// =======================
 let state = {
-  score: 0,
-  clues: 0,
+  clues: [],
   trust: 0,
-  inventory: [],
-  tension: 0
+  tension: 0,
+  volume: 0.6
 };
 
-// =========================
-// AUDIO SYSTEM
-// =========================
-const SFX = {
-  click: new Audio("sounds/click.mp3"),
-  win: new Audio("sounds/win.mp3"),
-  lose: new Audio("sounds/lose.mp3"),
-  wind: new Audio("sounds/wind.mp3")
-};
+// =======================
+// AUDIO SYSTEM (FIXED)
+// =======================
+function play(src) {
+  const a = new Audio(src);
+  a.volume = state.volume;
+  a.play().catch(() => {});
+}
 
-let bgMusic = new Audio("sounds/ambient.mp3");
-bgMusic.loop = true;
-
-let volume = 0.6;
-
+// volume control
 document.getElementById("volume").addEventListener("input", e => {
-  volume = parseFloat(e.target.value);
+  state.volume = parseFloat(e.target.value);
 });
 
-// play sound
-function play(s) {
-  if (!SFX[s]) return;
-  SFX[s].volume = volume;
-  SFX[s].currentTime = 0;
-  SFX[s].play();
-}
-
-// music fade
-function musicFadeIn() {
-  bgMusic.play();
-  let v = 0;
-  const t = setInterval(() => {
-    if (v < 0.4) {
-      v += 0.02;
-      bgMusic.volume = v * volume;
-    } else clearInterval(t);
-  }, 40);
-}
-
-function musicFadeOut() {
-  let v = bgMusic.volume;
-  const t = setInterval(() => {
-    if (v > 0) {
-      v -= 0.02;
-      bgMusic.volume = v;
-    } else {
-      bgMusic.pause();
-      clearInterval(t);
-    }
-  }, 40);
-}
-
-// =========================
-// ELEMENTS
-// =========================
+// =======================
+// UI ELEMENTS
+// =======================
 const textEl = document.getElementById("text");
 const choicesEl = document.getElementById("choices");
+const boardEl = document.getElementById("board");
 
-// =========================
-// HUD UPDATE
-// =========================
-function update() {
-  document.getElementById("score").innerText = state.score;
-  document.getElementById("clues").innerText = state.clues;
+// =======================
+// UPDATE HUD
+// =======================
+function updateHUD() {
+  document.getElementById("clueCount").innerText = state.clues.length;
   document.getElementById("trust").innerText = state.trust;
-  document.getElementById("inv").innerText =
-    state.inventory.length ? state.inventory.join(", ") : "None";
+  document.getElementById("tension").innerText = state.tension;
+
+  boardEl.innerHTML = "";
+  state.clues.forEach(c => {
+    const li = document.createElement("li");
+    li.innerText = "🧩 " + c;
+    boardEl.appendChild(li);
+  });
 }
 
-// =========================
-// TYPEWRITER (CINEMATIC CONTROLLED)
-// =========================
-function typeText(text, cb) {
+// =======================
+// TYPEWRITER (CINEMATIC)
+// =======================
+function type(text, cb) {
   textEl.innerHTML = "";
   let i = 0;
 
-  const interval = setInterval(() => {
+  const t = setInterval(() => {
     textEl.innerHTML += text[i];
     i++;
     if (i >= text.length) {
-      clearInterval(interval);
-      if (cb) cb();
+      clearInterval(t);
+      cb && cb();
     }
-  }, 16);
+  }, 15);
 }
 
-// =========================
-// CINEMATIC SCENE SWITCH
-// =========================
+// =======================
+// SCENE ENGINE
+// =======================
 function scene(text, options = []) {
-  const box = document.getElementById("scene");
+  choicesEl.innerHTML = "";
 
-  // cinematic transition
-  box.classList.add("fade");
+  type(text, () => {
+    options.forEach(o => {
+      const b = document.createElement("button");
+      b.innerText = o.text;
 
-  setTimeout(() => {
-    choicesEl.innerHTML = "";
+      b.onclick = () => {
+        play("sounds/click.mp3");
 
-    typeText(text, () => {
-      options.forEach(o => {
-        const b = document.createElement("button");
+        if (o.effect) o.effect();
 
-        b.innerText = o.text;
+        updateHUD();
+        o.next();
+      };
 
-        b.onclick = () => {
-          play("click");
-
-          if (o.effect) o.effect();
-          update();
-
-          // tension reaction
-          if (state.tension > 5) {
-            box.style.boxShadow = "0 0 40px rgba(255,0,0,0.2)";
-          }
-
-          o.next();
-        };
-
-        choicesEl.appendChild(b);
-      });
+      choicesEl.appendChild(b);
     });
-
-    box.classList.remove("fade");
-  }, 300);
+  });
 }
 
-// =========================
-// START GAME
-// =========================
-function startGame() {
-  state = { score: 0, clues: 0, trust: 0, inventory: [], tension: 0 };
-  update();
+// =======================
+// TENSION SYSTEM
+// =======================
+function addTension(n) {
+  state.tension += n;
 
-  musicFadeIn();
+  if (state.tension > 5) {
+    document.body.style.background = "#1a0000";
+  }
+
+  if (state.tension > 8) {
+    document.body.style.filter = "contrast(1.2)";
+  }
+}
+
+// =======================
+// CLUE SYSTEM
+// =======================
+function addClue(text) {
+  state.clues.push(text);
+  play("sounds/clue.mp3");
+}
+
+// =======================
+// GAME START
+// =======================
+function startGame() {
+  state = { clues: [], trust: 0, tension: 0, volume: state.volume };
+  updateHUD();
 
   scene(
-    "🕵️ The museum went dark at 2:13 AM. The diamond vanished. Security systems failed. You arrive as Detective Mira.",
+    "🕵️ A priceless diamond has vanished from the museum. Sherlock Holmes has been called to investigate.",
     [
       { text: "Enter Kitchen", next: kitchen },
       { text: "Enter Security Room", next: security },
@@ -154,35 +127,28 @@ function startGame() {
   );
 }
 
-// =========================
-// GAME SYSTEMS
-// =========================
-function addTension(x) {
-  state.tension += x;
-
-  if (state.tension > 4) musicFadeIn();
-  if (state.tension > 8) document.body.style.background = "#2a0000";
-}
-
-// =========================
+// =======================
 // LOCATIONS
-// =========================
+// =======================
+
 function kitchen() {
   addTension(1);
 
   scene(
-    "The kitchen is frozen in chaos. Something was dragged across the floor...",
+    "🍽️ The kitchen smells of chemicals. Something was wiped off the floor.",
     [
       {
-        text: "Search drawer",
-        effect: () => {
-          state.inventory.push("Key");
-          state.clues++;
-        },
+        text: "Inspect floor",
+        effect: () => addClue("Strange chemical residue found in kitchen"),
         next: kitchen2
       },
       {
-        text: "Leave",
+        text: "Open fridge",
+        effect: () => addClue("Hidden compartment inside fridge"),
+        next: kitchen2
+      },
+      {
+        text: "Return",
         next: startGame
       }
     ]
@@ -191,42 +157,79 @@ function kitchen() {
 
 function kitchen2() {
   scene(
-    "You found a coded key. It may open something important.",
-    [{ text: "Return", next: startGame }]
+    "You found traces of a forced entry pattern.",
+    [
+      { text: "Go back", next: startGame }
+    ]
   );
 }
+
+// -----------------------
 
 function security() {
   addTension(2);
 
   scene(
-    "Security system is corrupted. A guard avoids eye contact.",
+    "🖥️ Security room is corrupted. Footage is missing.",
     [
       {
-        text: "Interrogate",
-        effect: () => state.trust++,
-        next: () => {
-          scene(
-            "Guard: 'There were TWO suspects in the garden.'",
-            [{ text: "Go Garden", next: garden }]
-          );
-        }
+        text: "Interrogate guard",
+        effect: () => {
+          state.trust++;
+          addClue("Guard saw 2 suspects near garden");
+        },
+        next: security2
+      },
+      {
+        text: "Analyze logs",
+        effect: () => addClue("Security system was manually disabled"),
+        next: security2
       }
     ]
   );
 }
 
+function security2() {
+  scene(
+    "Something doesn't add up. Someone inside helped the thief.",
+    [
+      { text: "Go Garden", next: garden }
+    ]
+  );
+}
+
+// -----------------------
+
 function garden() {
   addTension(4);
-  play("wind");
+  play("sounds/tension.mp3");
 
   scene(
-    "🌫️ The garden feels wrong... colder... like you're being watched.",
+    "🌫️ The garden is silent... too silent.",
     [
       {
-        text: "Follow path",
+        text: "Follow footprints",
+        next: finalDeduction
+      },
+      {
+        text: "Wait silently",
+        next: finalDeduction
+      }
+    ]
+  );
+}
+
+// =======================
+// FINAL DEDUCTION SYSTEM
+// =======================
+function finalDeduction() {
+  scene(
+    "🧠 Sherlock analyzes your collected evidence...",
+    [
+      {
+        text: "Accuse the suspect",
         next: () => {
-          if (state.inventory.includes("Key") && state.trust > 0) {
+          if (state.clues.length >= 2) {
             win();
           } else {
             lose();
@@ -234,30 +237,28 @@ function garden() {
         }
       },
       {
-        text: "Call backup",
-        next: win
+        text: "Continue investigating",
+        next: startGame
       }
     ]
   );
 }
 
-// =========================
+// =======================
 // ENDINGS
-// =========================
+// =======================
 function win() {
-  play("win");
-  musicFadeOut();
+  play("sounds/win.mp3");
 
-  scene("🏆 CASE SOLVED — You uncovered the truth behind the diamond theft.", [
+  scene("🏆 CASE SOLVED — Sherlock uncovers the hidden conspiracy behind the theft.", [
     { text: "Play Again", next: startGame }
   ]);
 }
 
 function lose() {
-  play("lose");
-  musicFadeOut();
+  play("sounds/lose.mp3");
 
-  scene("💀 CASE FAILED — The truth remains hidden in the shadows.", [
+  scene("💀 CASE FAILED — The real thief escapes in the shadows.", [
     { text: "Retry Case", next: startGame }
   ]);
 }
