@@ -1,70 +1,199 @@
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: radial-gradient(circle at top, #0f172a, #020617);
-  color: white;
+// --------------------
+// GAME STATE
+// --------------------
+let state = {
+  score: 0,
+  clues: 0,
+  trust: 0
+};
+
+// --------------------
+// ELEMENTS
+// --------------------
+const textEl = document.getElementById("text");
+const choicesEl = document.getElementById("choices");
+const card = document.getElementById("card");
+
+const scoreEl = document.getElementById("score");
+const cluesEl = document.getElementById("clues");
+const trustEl = document.getElementById("trust");
+
+// --------------------
+// UI EFFECT: FADE SWITCH
+// --------------------
+function transition(callback) {
+  card.classList.add("fade-out");
+
+  setTimeout(() => {
+    callback();
+    card.classList.remove("fade-out");
+  }, 300);
 }
 
-.app {
-  max-width: 700px;
-  margin: auto;
-  padding: 20px;
-  text-align: center;
+// --------------------
+// TYPEWRITER
+// --------------------
+function typeText(text) {
+  textEl.innerHTML = "";
+  let i = 0;
+
+  function type() {
+    if (i < text.length) {
+      textEl.innerHTML += text[i];
+      i++;
+      setTimeout(type, 18);
+    }
+  }
+
+  type();
 }
 
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+// --------------------
+// UPDATE STATS
+// --------------------
+function updateStats() {
+  scoreEl.innerText = state.score;
+  cluesEl.innerText = state.clues;
+  trustEl.innerText = state.trust;
 }
 
-.stats {
-  font-size: 14px;
-  opacity: 0.8;
+// --------------------
+// SCENE ENGINE
+// --------------------
+function setScene(text, options) {
+  transition(() => {
+    typeText(text);
+    choicesEl.innerHTML = "";
+
+    options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.innerText = opt.text;
+
+      btn.onclick = () => {
+        if (opt.effect) opt.effect();
+        updateStats();
+        opt.next();
+      };
+
+      choicesEl.appendChild(btn);
+    });
+  });
 }
 
-.game-card {
-  margin-top: 60px;
-  padding: 30px;
-  border-radius: 20px;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
-  min-height: 200px;
-  transition: opacity 0.4s ease, transform 0.4s ease;
+// --------------------
+// START
+// --------------------
+function start() {
+  state = { score: 0, clues: 0, trust: 0 };
+  updateStats();
+
+  setScene(
+    "A priceless diamond has vanished. The museum is locked down. Detective Mira steps in… where do you go first?",
+    [
+      { text: "🍪 Kitchen", next: kitchen },
+      { text: "🛏️ Security Room", next: security },
+      { text: "🌿 Garden", next: garden }
+    ]
+  );
 }
 
-.fade {
-  opacity: 1;
-  transform: translateY(0);
+// --------------------
+// KITCHEN
+// --------------------
+function kitchen() {
+  setScene(
+    "The kitchen is cold. A drawer is slightly open…",
+    [
+      {
+        text: "Open drawer",
+        effect: () => state.clues++,
+        next: kitchen2
+      },
+      {
+        text: "Eat cookie",
+        next: () => lose("Poisoned cookie. Case over ☠️")
+      }
+    ]
+  );
 }
 
-.fade-out {
-  opacity: 0;
-  transform: translateY(20px);
+function kitchen2() {
+  setScene(
+    "Inside: a strange key engraved with a symbol.",
+    [
+      {
+        text: "Take key",
+        effect: () => state.clues++,
+        next: start
+      }
+    ]
+  );
 }
 
-#text {
-  font-size: 22px;
-  min-height: 80px;
+// --------------------
+// SECURITY
+// --------------------
+function security() {
+  setScene(
+    "Monitors flicker. A guard avoids eye contact.",
+    [
+      {
+        text: "Interrogate",
+        effect: () => state.trust++,
+        next: () => {
+          setScene(
+            "Guard whispers: 'I saw someone in the garden…'",
+            [{ text: "Go garden", next: garden }]
+          );
+        }
+      },
+      {
+        text: "Hack system",
+        next: () => lose("Alarm triggered 🚨")
+      }
+    ]
+  );
 }
 
-button {
-  margin: 10px;
-  padding: 12px 18px;
-  border-radius: 12px;
-  border: none;
-  background: #6366f1;
-  color: white;
-  cursor: pointer;
-  transition: 0.2s;
+// --------------------
+// GARDEN
+// --------------------
+function garden() {
+  setScene(
+    "Fog covers the garden. Footprints split in two directions…",
+    [
+      {
+        text: "Follow footprints",
+        next: () => {
+          if (state.trust > 0) {
+            win("You solved the case with teamwork 🏆");
+          } else {
+            lose("Trap! Wrong path.");
+          }
+        }
+      },
+      {
+        text: "Hide",
+        next: () => lose("You hesitated too long.")
+      }
+    ]
+  );
 }
 
-button:hover {
-  background: #818cf8;
-  transform: scale(1.05);
+// --------------------
+// ENDINGS
+// --------------------
+function win(msg) {
+  setScene("🏆 " + msg, [
+    { text: "Play Again", next: start }
+  ]);
 }
 
-.restart {
-  margin-top: 20px;
-  background: #ef4444;
+function lose(msg) {
+  setScene("💀 " + msg, [
+    { text: "Restart", next: start }
+  ]);
 }
+
+// START GAME
+start();
