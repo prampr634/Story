@@ -1,6 +1,6 @@
-// =========================
-// STATE SYSTEM
-// =========================
+// ==========================
+// GAME STATE
+// ==========================
 let state = {
   score: 0,
   clues: 0,
@@ -8,9 +8,9 @@ let state = {
   inventory: []
 };
 
-// =========================
+// ==========================
 // ELEMENTS
-// =========================
+// ==========================
 const textEl = document.getElementById("text");
 const choicesEl = document.getElementById("choices");
 const scoreEl = document.getElementById("score");
@@ -18,9 +18,19 @@ const cluesEl = document.getElementById("clues");
 const trustEl = document.getElementById("trust");
 const invEl = document.getElementById("inv");
 
-// =========================
-// SAFE TYPEWRITER ENGINE
-// =========================
+// ==========================
+// UPDATE HUD
+// ==========================
+function update() {
+  scoreEl.innerText = state.score;
+  cluesEl.innerText = state.clues;
+  trustEl.innerText = state.trust;
+  invEl.innerText = state.inventory.length ? state.inventory.join(", ") : "None";
+}
+
+// ==========================
+// SAFE TYPE ENGINE
+// ==========================
 let typing = false;
 
 function typeText(text, cb) {
@@ -36,155 +46,210 @@ function typeText(text, cb) {
       typing = false;
       if (cb) cb();
     }
-  }, 15);
+  }, 14);
 }
 
-// =========================
-// UI UPDATE
-// =========================
-function update() {
-  scoreEl.innerText = state.score;
-  cluesEl.innerText = state.clues;
-  trustEl.innerText = state.trust;
-  invEl.innerText = state.inventory.length ? state.inventory.join(", ") : "None";
-}
-
-// =========================
-// SCENE ENGINE
-// =========================
+// ==========================
+// CORE SCENE ENGINE
+// ==========================
 function scene(text, options = []) {
   choicesEl.innerHTML = "";
 
   typeText(text, () => {
-    options.forEach(o => {
-      const b = document.createElement("button");
-      b.innerText = o.text;
+    options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.innerText = opt.text;
 
-      b.onclick = () => {
-        if (o.effect) o.effect();
+      btn.onclick = () => {
+        if (opt.effect) opt.effect();
         update();
-        o.next();
+        opt.next();
       };
 
-      choicesEl.appendChild(b);
+      choicesEl.appendChild(btn);
     });
   });
 }
 
-// =========================
-// START
-// =========================
-function start() {
+// ==========================
+// GAME START
+// ==========================
+function startGame() {
   state = { score: 0, clues: 0, trust: 0, inventory: [] };
   update();
 
   scene(
-    "🕵️ The diamond is missing. The museum is locked. Three locations are available.",
+    "🕵️ The museum alarm went off at 2:13 AM. The diamond vanished. Cameras corrupted. Three zones show suspicious activity.",
     [
-      { text: "🍪 Kitchen", next: kitchen },
+      { text: "🍪 Kitchen Wing", next: kitchen },
       { text: "🖥️ Security Room", next: security },
-      { text: "🌿 Garden", next: garden }
+      { text: "🌿 Garden Exit", next: garden }
     ]
   );
 }
 
-// =========================
-// KITCHEN
-// =========================
+// ==========================
+// KITCHEN ARC (LONG + BRANCHED)
+// ==========================
 function kitchen() {
   scene(
-    "The kitchen is messy. Something was dragged across the floor.",
+    "The kitchen is frozen in chaos. Broken glass, spilled liquid, and a faint chemical smell.",
     [
       {
-        text: "Search drawers",
+        text: "Inspect fridge",
         effect: () => state.clues++,
-        next: () => {
-          state.inventory.push("Key");
-          update();
-          kitchen2();
-        }
+        next: kitchenFridge
       },
       {
-        text: "Leave",
-        next: start
+        text: "Check floor stains",
+        effect: () => state.score += 3,
+        next: kitchenFloor
+      },
+      {
+        text: "Eat cookie (risky)",
+        next: () => lose("☠️ Poisoned bait. You collapsed instantly.")
       }
     ]
   );
 }
 
-function kitchen2() {
+function kitchenFridge() {
   scene(
-    "You found a strange key. It might open something important.",
+    "Inside the fridge: a hidden compartment opens… revealing a coded key.",
     [
-      { text: "Return", next: start }
+      {
+        text: "Take key",
+        effect: () => state.inventory.push("Key"),
+        next: kitchenReturn
+      },
+      { text: "Ignore", next: kitchenReturn }
     ]
   );
 }
 
-// =========================
-// SECURITY
-// =========================
+function kitchenFloor() {
+  scene(
+    "Footprints overlap here. At least two suspects moved through this area.",
+    [
+      { text: "Follow prints", next: garden },
+      {
+        text: "Report evidence",
+        effect: () => state.trust++,
+        next: security
+      }
+    ]
+  );
+}
+
+function kitchenReturn() {
+  scene("You leave the kitchen with new information.", [
+    { text: "Go back", next: startGame }
+  ]);
+}
+
+// ==========================
+// SECURITY ARC (DEEPER)
+// ==========================
 function security() {
   scene(
-    "Monitors flicker. A guard avoids eye contact.",
+    "Security hub is glitching. One guard is sweating, avoiding eye contact.",
     [
       {
-        text: "Interrogate",
-        effect: () => state.trust++,
-        next: () => {
-          scene(
-            "Guard: 'I saw someone go to the garden.'",
-            [{ text: "Go garden", next: garden }]
-          );
-        }
+        text: "Interrogate guard",
+        effect: () => state.trust += 2,
+        next: securityTalk
       },
       {
         text: "Hack system",
-        next: () => lose("Alarm triggered. Investigation failed.")
+        next: () => lose("🚨 System lock triggered. Investigation blocked.")
+      },
+      {
+        text: "Watch silently",
+        effect: () => state.score += 2,
+        next: securityReveal
       }
     ]
   );
 }
 
-// =========================
-// GARDEN
-// =========================
+function securityTalk() {
+  scene(
+    "Guard whispers: 'There were TWO people in the garden… not one.'",
+    [{ text: "Go garden", next: garden }]
+  );
+}
+
+function securityReveal() {
+  scene(
+    "You uncover corrupted footage showing a second hidden suspect.",
+    [{ text: "Investigate garden", next: garden }]
+  );
+}
+
+// ==========================
+// GARDEN (MULTI-END GAME SYSTEM)
+// ==========================
 function garden() {
   scene(
-    "Fog covers the garden. Two paths appear.",
+    "Fog covers the garden. Two paths split: one clean, one destroyed.",
     [
       {
-        text: "Follow path",
+        text: "Take clean path",
         next: () => {
-          if (state.trust > 0 && state.inventory.includes("Key")) {
-            win("You solved the case using all evidence 🏆");
+          if (state.trust >= 2 && state.inventory.includes("Key")) {
+            win("🏆 MASTER DETECTIVE ENDING: You solved everything perfectly.");
           } else {
-            lose("You were tricked. Wrong path.");
+            lose("You trusted incomplete evidence. The real thief escapes.");
+          }
+        }
+      },
+      {
+        text: "Take broken path",
+        next: () => {
+          if (state.clues >= 2) {
+            win("🏆 EVIDENCE-BASED ENDING: You solved the case through clues.");
+          } else {
+            lose("Trap triggered. Investigation failed.");
           }
         }
       },
       {
         text: "Call backup",
-        next: () => win("Backup arrives. Case solved professionally 🚔")
+        next: () => win("🚔 PROFESSIONAL ENDING: Backup secures the arrest.")
+      },
+      {
+        text: "Search secretly (hidden path)",
+        next: () => secretEnding()
       }
     ]
   );
 }
 
-// =========================
+// ==========================
+// SECRET ENDING
+// ==========================
+function secretEnding() {
+  if (state.inventory.includes("Key") && state.trust >= 1) {
+    win("🕶️ SECRET ENDING: You discover the thief is an inside agent…");
+  } else {
+    lose("Secret path failed. You were not ready.");
+  }
+}
+
+// ==========================
 // ENDINGS
-// =========================
+// ==========================
 function win(msg) {
   scene("🏆 " + msg, [
-    { text: "Play Again", next: start }
+    { text: "Play Again", next: startGame }
   ]);
 }
 
 function lose(msg) {
   scene("💀 " + msg, [
-    { text: "Restart", next: start }
+    { text: "Restart Case", next: startGame }
   ]);
 }
 
-// START GAME
-start();
+// START
+startGame();
