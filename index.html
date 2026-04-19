@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Detective Mira: Case Engine</title>
+  <title>Detective Mira: Blackout Heist</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -10,26 +10,23 @@
 <div class="app">
 
   <header>
-  <h1>🕵️ Detective Mira</h1>
-  <div class="stats">
-    🧠 Clues: <span id="clues">0</span> |
-    ⚖️ Trust: <span id="trust">0</span>
-  </div>
-</header>
+    <h1>🕵️ Detective Mira</h1>
+    <div class="stats">
+      🧠 Clues: <span id="clues">0</span> |
+      ⚖️ Trust: <span id="trust">0</span>
+    </div>
+  </header>
 
   <main class="scene">
     <p id="text"></p>
     <div id="choices"></div>
   </main>
 
-  <div class="inventory">
-    🎒 Inventory: <span id="inv">None</span>
-  </div>
-
-  <button onclick="start()">Restart Case 🔄</button>
+  <button class="restart" onclick="start()">Restart Case 🔄</button>
 
 </div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
