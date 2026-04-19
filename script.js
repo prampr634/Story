@@ -1,48 +1,42 @@
+// =========================
+// SHERLOCK DETECTIVE ENGINE (FIXED)
+// =========================
 
-// =========================
-// WORLD STATE (OPEN WORLD CORE)
-// =========================
-let world = {
-  location: "museum",
+// -------------------------
+// STATE
+// -------------------------
+let state = {
   clues: [],
-  volume: 0.6
+  trust: 0,
+  tension: 0,
+  volume: 0.6,
+  location: "start"
 };
 
-// =========================
+// -------------------------
 // ELEMENTS
-// =========================
-const locName = document.getElementById("locName");
-const npcEl = document.getElementById("npc");
+// -------------------------
 const textEl = document.getElementById("text");
 const choicesEl = document.getElementById("choices");
 const boardEl = document.getElementById("board");
 
-// =========================
-// SOUND SYSTEM (FIXED)
-// =========================
+// -------------------------
+// 🔊 SOUND SYSTEM (FIXED FOR "sound/")
+// -------------------------
 function play(file) {
-  const audio = new Audio("./sound/" + file);
-  audio.volume = world.volume;
+  const audio = new Audio("sound/" + file);
+  audio.volume = state.volume;
   audio.play().catch(() => {});
 }
 
-// =========================
-// UPDATE HUD
-// =========================
-function updateHUD() {
-  document.getElementById("clueCount").innerText = world.clues.length;
+// volume slider
+document.getElementById("volume").addEventListener("input", e => {
+  state.volume = parseFloat(e.target.value);
+});
 
-  boardEl.innerHTML = "";
-  world.clues.forEach(c => {
-    const d = document.createElement("div");
-    d.innerText = "🧩 " + c;
-    boardEl.appendChild(d);
-  });
-}
-
-// =========================
-// TYPE EFFECT
-// =========================
+// -------------------------
+// TYPEWRITER EFFECT
+// -------------------------
 function type(text, cb) {
   textEl.innerHTML = "";
   let i = 0;
@@ -54,199 +48,241 @@ function type(text, cb) {
       clearInterval(t);
       cb && cb();
     }
-  }, 10);
+  }, 15);
 }
 
-// =========================
+// -------------------------
+// SCENE ENGINE
+// -------------------------
+function scene(text, options = []) {
+  choicesEl.innerHTML = "";
+
+  type(text, () => {
+    options.forEach(o => {
+      const btn = document.createElement("button");
+      btn.innerText = o.text;
+
+      btn.onclick = () => {
+        play("click.mp3");
+
+        if (o.effect) o.effect();
+
+        updateHUD();
+        o.next();
+      };
+
+      choicesEl.appendChild(btn);
+    });
+  });
+}
+
+// -------------------------
+// HUD + BOARD
+// -------------------------
+function updateHUD() {
+  document.getElementById("clueCount").innerText = state.clues.length;
+  document.getElementById("trust").innerText = state.trust;
+  document.getElementById("tension").innerText = state.tension;
+
+  renderBoard();
+}
+
+function renderBoard() {
+  boardEl.innerHTML = "";
+
+  state.clues.forEach(c => {
+    const li = document.createElement("li");
+    li.innerText = "🧩 " + c;
+    boardEl.appendChild(li);
+  });
+}
+
+// -------------------------
 // CLUE SYSTEM
-// =========================
+// -------------------------
 function addClue(text) {
-  world.clues.push(text);
-  updateHUD();
+  state.clues.push(text);
   play("clue.mp3");
 }
 
-// =========================
-// TRAVEL SYSTEM (OPEN WORLD CORE)
-// =========================
-function travel(loc) {
-  play("click.mp3");
-  world.location = loc;
-  loadLocation();
+// -------------------------
+// TENSION SYSTEM
+// -------------------------
+function tension(n) {
+  state.tension += n;
+
+  if (state.tension > 3) {
+    document.body.style.background = "#1a0000";
+  }
+
+  if (state.tension > 6) {
+    document.body.style.filter = "contrast(1.3)";
+  }
 }
 
-// =========================
-// LOCATIONS (OPEN WORLD MAP)
-// =========================
-function loadLocation() {
+// -------------------------
+// MAP SYSTEM
+// -------------------------
+function go(loc) {
+  play("click.mp3");
 
-  choicesEl.innerHTML = "";
+  state.location = loc;
 
-  if (world.location === "museum") museum();
-  if (world.location === "alley") alley();
-  if (world.location === "station") station();
-  if (world.location === "house") house();
+  if (loc === "kitchen") kitchen();
+  if (loc === "security") security();
+  if (loc === "garden") garden();
+  if (loc === "vault") vault();
+}
+
+// -------------------------
+// START GAME
+// -------------------------
+function startGame() {
+  state = {
+    clues: [],
+    trust: 0,
+    tension: 0,
+    volume: state.volume,
+    location: "start"
+  };
 
   updateHUD();
-}
 
-// =========================
-// 🏛️ MUSEUM
-// =========================
-function museum() {
-  locName.innerText = "🏛️ Museum";
-
-  type(
-    "A stolen diamond case lies shattered. The museum is silent… too silent.",
-    () => {
-
-      choicesEl.innerHTML = `
-        <button class="choice" onclick="addClue('Broken glass from inside')">Inspect display case</button>
-        <button class="choice" onclick="addClue('Security logs show internal access')">Check security logs</button>
-        <button class="choice" onclick="npcGuard()">Talk to Guard</button>
-      `;
-
-    }
+  scene(
+    "🕵️ Sherlock Holmes arrives. A diamond has vanished from the museum under impossible circumstances.",
+    [
+      { text: "🍽️ Kitchen Wing", next: () => kitchen() },
+      { text: "🖥️ Security Room", next: () => security() },
+      { text: "🌿 Garden", next: () => garden() }
+    ]
   );
 }
 
-// =========================
-// 🧍 NPC GUARD
-// =========================
-function npcGuard() {
-  npcEl.innerText = "🧍 Guard";
+// -------------------------
+// LOCATIONS
+// -------------------------
+function kitchen() {
+  tension(1);
 
-  type("I swear I saw nothing... but I heard footsteps inside.", () => {
-
-    choicesEl.innerHTML = `
-      <button class="choice" onclick="addClue('Guard nervous, hiding truth')">Pressure him</button>
-      <button class="choice" onclick="travel('alley')">Leave</button>
-    `;
-
-  });
-}
-
-// =========================
-// 🌑 ALLEY
-// =========================
-function alley() {
-  locName.innerText = "🌑 Dark Alley";
-
-  type(
-    "A hidden alley behind the museum. Something was dragged here.",
-    () => {
-
-      choicesEl.innerHTML = `
-        <button class="choice" onclick="addClue('Drag marks leading from museum')">Inspect ground</button>
-        <button class="choice" onclick="addClue('Hidden security badge found')">Search trash</button>
-        <button class="choice" onclick="npcInformant()">Talk to informant</button>
-      `;
-    }
+  scene(
+    "🍽️ Kitchen Wing — something was disturbed here.",
+    [
+      {
+        text: "🔍 Inspect floor",
+        effect: () => addClue("Chemical residue near fridge"),
+        next: kitchen2
+      },
+      {
+        text: "📦 Search drawers",
+        effect: () => addClue("Hidden key fragment found"),
+        next: kitchen2
+      },
+      {
+        text: "🧍 Question chef",
+        effect: () => {
+          state.trust++;
+          addClue("Chef saw unknown figure at 2 AM");
+        },
+        next: kitchen2
+      },
+      {
+        text: "🗺️ Go Map",
+        next: startGame
+      }
+    ]
   );
 }
 
-// =========================
-// 🧍 INFORMANT
-// =========================
-function npcInformant() {
-  npcEl.innerText = "🧍 Informant";
-
-  type("People are scared… someone powerful did this.", () => {
-
-    choicesEl.innerHTML = `
-      <button class="choice" onclick="addClue('Suspect linked to museum staff')">Pay for info</button>
-      <button class="choice" onclick="travel('station')">Leave</button>
-    `;
-
-  });
+function kitchen2() {
+  scene("The kitchen feels colder now... like something is missing.", [
+    { text: "Continue", next: startGame }
+  ]);
 }
 
-// =========================
-// 🚉 STATION
-// =========================
-function station() {
-  locName.innerText = "🚉 Train Station";
+// -------------------------
+function security() {
+  tension(2);
 
-  type(
-    "Crowded station. Someone here knows something.",
-    () => {
-
-      choicesEl.innerHTML = `
-        <button class="choice" onclick="addClue('Suspect seen leaving city')">Check arrivals</button>
-        <button class="choice" onclick="npcWitness()">Talk to witness</button>
-        <button class="choice" onclick="travel('house')">Follow suspect lead</button>
-      `;
-    }
+  scene(
+    "🖥️ Security Room — all footage has been wiped.",
+    [
+      {
+        text: "Analyze logs",
+        effect: () => addClue("Security system manually disabled"),
+        next: security2
+      },
+      {
+        text: "Interrogate guard",
+        effect: () => {
+          state.trust++;
+          addClue("Guard saw 2 suspects in garden");
+        },
+        next: security2
+      }
+    ]
   );
 }
 
-// =========================
-// 🧍 WITNESS
-// =========================
-function npcWitness() {
-  npcEl.innerText = "🧍 Witness";
-
-  type("I saw a museum employee with a black bag…", () => {
-
-    choicesEl.innerHTML = `
-      <button class="choice" onclick="addClue('Employee involved in theft')">Take statement</button>
-      <button class="choice" onclick="travel('museum')">Return</button>
-    `;
-
-  });
+function security2() {
+  scene("Someone inside the museum helped the thief...", [
+    { text: "Go Garden", next: garden }
+  ]);
 }
 
-// =========================
-// 🏠 HOUSE
-// =========================
-function house() {
-  locName.innerText = "🏠 Suspect House";
+// -------------------------
+function garden() {
+  tension(3);
 
-  type(
-    "You arrive at a dim house. The door is slightly open.",
-    () => {
-
-      choicesEl.innerHTML = `
-        <button class="choice" onclick="addClue('Hidden vault key found')">Search house</button>
-        <button class="choice" onclick="finalCase()">Enter basement</button>
-        <button class="choice" onclick="travel('museum')">Retreat</button>
-      `;
-    }
+  scene(
+    "🌿 Garden — silence is unnatural... something is watching.",
+    [
+      { text: "Follow footprints", next: finalCase },
+      { text: "Wait silently", next: finalCase }
+    ]
   );
 }
 
-// =========================
-// 🧠 FINAL CASE
-// =========================
+// -------------------------
+// FINAL DEDUCTION
+// -------------------------
 function finalCase() {
-
-  type(
-    "All clues connect… the thief was an INSIDER working across multiple locations.",
-    () => {
-
-      choicesEl.innerHTML = `
-        <button class="choice" onclick="win()">Accuse suspect</button>
-        <button class="choice" onclick="travel('museum')">Reinvestigate</button>
-      `;
-    }
+  scene(
+    "🧠 Sherlock analyzes all evidence...",
+    [
+      {
+        text: "Accuse suspect",
+        next: () => {
+          if (state.clues.length >= 3) {
+            win();
+          } else {
+            lose();
+          }
+        }
+      }
+    ]
   );
 }
 
-// =========================
+// -------------------------
 // ENDINGS
-// =========================
+// -------------------------
 function win() {
   play("win.mp3");
 
-  type("🏆 CASE SOLVED — The insider conspiracy is exposed.", () => {
-    choicesEl.innerHTML = `
-      <button class="choice" onclick="location.reload()">Play Again</button>
-    `;
-  });
+  scene("🏆 CASE SOLVED — Sherlock exposes the hidden conspiracy behind the theft.", [
+    { text: "Play Again", next: startGame }
+  ]);
 }
 
-// =========================
-// START
-// =========================
-loadLocation();
-updateHUD();
+function lose() {
+  play("lose.mp3");
+
+  scene("💀 CASE FAILED — the real culprit escapes into the shadows.", [
+    { text: "Retry Case", next: startGame }
+  ]);
+}
+
+// -------------------------
+// BOOT GAME
+// -------------------------
+startGame();
