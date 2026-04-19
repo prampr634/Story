@@ -8,34 +8,41 @@ body {
 .app {
   max-width: 800px;
   margin: auto;
-  text-align: center;
   padding: 20px;
+  text-align: center;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .hud {
   font-size: 13px;
   opacity: 0.8;
-  margin-bottom: 20px;
 }
 
-.scene-box {
-  background: rgba(255,255,255,0.05);
+.scene {
+  margin-top: 40px;
   padding: 25px;
+  background: rgba(255,255,255,0.05);
   border-radius: 20px;
   min-height: 220px;
+  transition: 0.4s;
 }
 
 #text {
-  font-size: 20px;
+  font-size: 22px;
   min-height: 90px;
   line-height: 1.5;
 }
 
 button {
-  margin: 8px;
+  margin: 6px;
   padding: 10px 14px;
-  border: none;
   border-radius: 10px;
+  border: none;
   background: #6366f1;
   color: white;
   cursor: pointer;
@@ -43,4 +50,13 @@ button {
 
 button:hover {
   background: #818cf8;
+}
+
+.bottom {
+  margin-top: 15px;
+  opacity: 0.8;
+}
+
+.buttons {
+  margin-top: 10px;
 }
