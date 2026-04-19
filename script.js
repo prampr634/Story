@@ -1,146 +1,207 @@
+// ----------------------
+// GAME STATE
+// ----------------------
 let score = 0;
-let inventory = [];
+let trust = 0;
+let evidence = [];
 
+// ----------------------
+// ELEMENTS
+// ----------------------
 const textEl = document.getElementById("text");
 const choicesEl = document.getElementById("choices");
-const scoreEl = document.getElementById("score");
-const inventoryEl = document.getElementById("inventory");
 
-const clickSound = document.getElementById("clickSound");
-const winSound = document.getElementById("winSound");
-
+// ----------------------
 // TYPEWRITER EFFECT
-function typeText(text, i = 0) {
-  if (i === 0) textEl.innerHTML = "";
-  if (i < text.length) {
-    textEl.innerHTML += text.charAt(i);
-    setTimeout(() => typeText(text, i + 1), 25);
+// ----------------------
+function typeText(text, speed = 18) {
+  textEl.innerHTML = "";
+  let i = 0;
+
+  function type() {
+    if (i < text.length) {
+      textEl.innerHTML += text.charAt(i);
+      i++;
+      setTimeout(type, speed);
+    }
   }
+
+  type();
 }
 
-// UPDATE UI
-function updateStats() {
-  scoreEl.innerText = score;
-  inventoryEl.innerText = inventory.length ? inventory.join(", ") : "None";
-  localStorage.setItem("score", score);
-  localStorage.setItem("inventory", JSON.stringify(inventory));
-}
-
-// SET SCENE
+// ----------------------
+// SCENE ENGINE
+// ----------------------
 function setScene(text, choices) {
   typeText(text);
+
   choicesEl.innerHTML = "";
 
   choices.forEach(choice => {
-    let btn = document.createElement("button");
+    const btn = document.createElement("button");
     btn.innerText = choice.text;
+
     btn.onclick = () => {
-      clickSound.play();
-      choice.action();
+      // play click sound if you added it
+      if (choice.effect) choice.effect();
+      choice.next();
     };
+
     choicesEl.appendChild(btn);
   });
-
-  updateStats();
 }
 
+// ----------------------
 // START GAME
+// ----------------------
 function start() {
-  score = Number(localStorage.getItem("score")) || 0;
-  inventory = JSON.parse(localStorage.getItem("inventory")) || [];
+  score = 0;
+  trust = 0;
+  evidence = [];
 
   setScene(
-    "A priceless diamond has been stolen. You are Detective Mira. Where do you go?",
+    "🕵️ Detective Mira arrives at the museum. The diamond is missing. The cameras are down. Something feels off... where do you go first?",
     [
-      { text: "🍪 Kitchen", action: kitchen },
-      { text: "🛏️ Bedroom", action: bedroom },
-      { text: "🌿 Garden", action: garden }
+      { text: "🍪 Kitchen", next: kitchen },
+      { text: "🛏️ Security Room", next: securityRoom },
+      { text: "🌿 Garden Exit", next: gardenExit }
     ]
   );
 }
 
-// SCENES
+// ----------------------
+// KITCHEN PATH
+// ----------------------
 function kitchen() {
-  score += 5;
   setScene(
-    "You find crumbs... and a strange key.",
+    "The kitchen smells strange. You see crumbs, a broken plate, and a locked drawer.",
     [
       {
-        text: "Take key",
-        action: () => {
-          inventory.push("Key");
-          kitchen2();
+        text: "Open drawer (risky)",
+        effect: () => score += 5,
+        next: () => {
+          if (Math.random() < 0.4) {
+            lose("A trap activates. You get caught in a net.");
+          } else {
+            evidence.push("Key");
+            kitchen2();
+          }
         }
       },
-      { text: "Ignore", action: start }
+      {
+        text: "Eat crumbs",
+        next: () => lose("The crumbs were poisoned cookies ☠️")
+      },
+      {
+        text: "Leave",
+        next: start
+      }
     ]
   );
 }
 
 function kitchen2() {
   setScene(
-    "The crumbs lead to a locked box.",
+    "Inside the drawer you find a strange key with a symbol.",
     [
       {
-        text: "Open box",
-        action: () => {
-          if (inventory.includes("Key")) {
-            win("You opened the box and found the diamond 💎");
-          } else {
-            lose("It's locked!");
-          }
-        }
+        text: "Take key",
+        effect: () => evidence.push("Key"),
+        next: start
+      },
+      {
+        text: "Ignore it",
+        next: start
       }
     ]
   );
 }
 
-function bedroom() {
+// ----------------------
+// SECURITY ROOM PATH
+// ----------------------
+function securityRoom() {
   setScene(
-    "The room is spotless... suspicious.",
-    [
-      { text: "Check closet", action: () => lose("A cat attacks you 😭") },
-      { text: "Look under bed", action: () => {
-        score += 10;
-        setScene("You find a clue pointing to the garden.", [
-          { text: "Go to garden", action: garden }
-        ]);
-      }}
-    ]
-  );
-}
-
-function garden() {
-  setScene(
-    "You see footprints.",
+    "The security feed is corrupted. A guard looks nervous.",
     [
       {
-        text: "Follow footprints",
-        action: () => win("You caught the thief 🏆")
+        text: "Interrogate guard",
+        effect: () => trust += 1,
+        next: securityTruth
       },
-      { text: "Ignore", action: () => lose("The thief escaped.") }
+      {
+        text: "Hack system",
+        effect: () => score += 5,
+        next: () => lose("You triggered the alarm system 🚨")
+      },
+      {
+        text: "Leave",
+        next: () => lose("You ignored key evidence. Case lost.")
+      }
     ]
   );
 }
 
+function securityTruth() {
+  setScene(
+    "The guard whispers: 'I saw someone heading toward the garden...'",
+    [
+      { text: "Go to garden", next: gardenExit }
+    ]
+  );
+}
+
+// ----------------------
+// GARDEN PATH
+// ----------------------
+function gardenExit() {
+  setScene(
+    "The foggy garden is silent. Footprints lead deeper in... you hear movement behind you.",
+    [
+      {
+        text: "Chase suspect",
+        next: () => {
+          if (trust > 0) {
+            win("You and the guard work together and catch the thief 🏆");
+          } else {
+            lose("You chased the wrong person. It was a trap.");
+          }
+        }
+      },
+      {
+        text: "Hide",
+        next: () => lose("You hesitated too long. The thief escaped.")
+      },
+      {
+        text: "Call backup",
+        next: () => win("Backup arrives and you solve the case professionally 🚔")
+      }
+    ]
+  );
+}
+
+// ----------------------
 // ENDINGS
+// ----------------------
 function win(message) {
-  score += 20;
-  winSound.play();
-  setScene(message + " YOU WIN!", []);
+  setScene(
+    "🏆 " + message + "\n\nFINAL SCORE: " + score + "\nEVIDENCE: " + evidence.join(", "),
+    [
+      { text: "Play Again", next: start }
+    ]
+  );
 }
 
 function lose(message) {
-  setScene(message + " GAME OVER.", []);
+  setScene(
+    "💀 " + message + "\n\nGAME OVER\nFINAL SCORE: " + score,
+    [
+      { text: "Restart", next: start }
+    ]
+  );
 }
 
-// RESTART
-function restart() {
-  localStorage.clear();
-  score = 0;
-  inventory = [];
-  start();
-}
-
+// ----------------------
 // START GAME ON LOAD
+// ----------------------
 start();
