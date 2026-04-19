@@ -1,3 +1,7 @@
+/* =========================
+   BASE LAYOUT
+========================= */
+
 body {
   margin: 0;
   font-family: Georgia, serif;
@@ -5,45 +9,132 @@ body {
   color: white;
 }
 
+/* MAIN WRAPPER */
 .game {
   max-width: 1000px;
   margin: auto;
   padding: 20px;
 }
 
+/* =========================
+   HEADER HUD
+========================= */
+
 .hud {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.stats {
   opacity: 0.8;
+  margin-top: 5px;
 }
 
-.scene {
-  margin-top: 20px;
-  padding: 25px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 15px;
+/* =========================
+   STORY BOX
+========================= */
+
+.scene-box {
+  background: rgba(255,255,255,0.06);
+  padding: 20px;
+  border-radius: 12px;
   min-height: 200px;
+  margin-bottom: 20px;
 }
 
-.layout {
+#text {
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+#choices button {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  cursor: pointer;
+  background: #1c1f2a;
+  color: white;
+  border: 1px solid #333;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+
+#choices button:hover {
+  background: #2c3142;
+}
+
+/* =========================
+   DETECTIVE UI
+========================= */
+
+.ui {
   display: flex;
   gap: 20px;
-  margin-top: 20px;
 }
 
 .panel {
   flex: 1;
   background: rgba(255,255,255,0.05);
-  padding: 10px;
+  padding: 15px;
   border-radius: 12px;
+  min-height: 200px;
 }
 
-button {
+.panel h2 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+.panel button {
   display: block;
+  width: 100%;
   margin: 6px 0;
   padding: 8px;
-  width: 100%;
+  cursor: pointer;
+  background: #141826;
+  color: white;
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+
+.panel button:hover {
+  background: #22283a;
+}
+
+/* =========================
+   EVIDENCE BOARD
+========================= */
+
+#board {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#board li {
+  padding: 6px;
+  margin: 4px 0;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
   cursor: pointer;
 }
 
-button:hover {
-  background: #333;
+/* =========================
+   FOOTER
+========================= */
+
+.footer {
+  margin-top: 20px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* =========================
+   ATMOSPHERIC EFFECTS
+========================= */
+
+body.tension {
+  background: #120000;
+  transition: 0.5s;
 }
