@@ -1,4 +1,3 @@
-
 // =========================
 // STATE
 // =========================
@@ -37,7 +36,7 @@ function typeText(text, cb) {
       typing = false;
       if (cb) cb();
     }
-  }, 12);
+  }, 10);
 }
 
 // =========================
@@ -63,7 +62,6 @@ function scene(text, options = []) {
 
       b.onclick = () => {
         if (typing) return;
-
         if (o.effect) o.effect();
         update();
         o.next();
@@ -75,43 +73,52 @@ function scene(text, options = []) {
 }
 
 // =========================
-// START
+// START (NOW MORE OPTIONS)
 // =========================
 function start() {
   state = { score: 0, clues: 0, trust: 0, inventory: [] };
   update();
 
   scene(
-    "🕵️ A diamond vanished inside a locked museum. No forced entry. Three leads remain.",
+    "🕵️ A diamond is missing from a locked museum. No forced entry. You must investigate carefully.",
     [
-      { text: "🏛️ Museum", next: museum },
+      { text: "🏛️ Enter Museum Hall", next: museum },
       { text: "🖥️ Security Room", next: security },
-      { text: "🍪 Kitchen", next: kitchen },
-      { text: "📚 Library", next: library }
+      { text: "🍪 Kitchen Wing", next: kitchen },
+      { text: "🌿 Garden Area", next: garden }
     ]
   );
 }
 
 // =========================
-// MUSEUM (EXPANDED)
+// 🏛️ MUSEUM (EXPANDED HEAVY OPTIONS)
 // =========================
 function museum() {
   scene(
-    "Glass case shattered… but no entry point exists.",
+    "The glass case is shattered… but strangely clean around it.",
     [
       {
-        text: "Inspect glass",
+        text: "Inspect broken glass",
         effect: () => state.clues++,
         next: museum2
       },
       {
-        text: "Talk to guard",
+        text: "Look at security camera angle",
         effect: () => state.trust++,
-        next: guard
+        next: museum3
       },
       {
-        text: "Go library",
-        next: library
+        text: "Check floor markings",
+        effect: () => state.clues++,
+        next: museum4
+      },
+      {
+        text: "Talk to guard",
+        next: guard1
+      },
+      {
+        text: "Check display stand underside",
+        next: museum5
       }
     ]
   );
@@ -119,100 +126,16 @@ function museum() {
 
 function museum2() {
   scene(
-    "The break looks staged… someone wanted it to look like theft.",
+    "Glass fragments show break happened from INSIDE the case.",
     [
-      { text: "Continue", next: security }
+      { text: "Continue investigation", next: museum }
     ]
   );
 }
 
-// =========================
-// 🧍 GUARD NPC
-// =========================
-function guard() {
+function museum3() {
   scene(
-    "Guard: 'I saw someone inside... but I shouldn't say more.'",
-    [
-      {
-        text: "Press harder",
-        effect: () => state.clues++,
-        next: security
-      },
-      {
-        text: "Believe him",
-        next: museum
-      }
-    ]
-  );
-}
-
-// =========================
-// SECURITY (EXPANDED)
-// =========================
-function security() {
-  scene(
-    "Monitors flicker. One camera feed is missing.",
-    [
-      {
-        text: "Check logs",
-        effect: () => state.clues++,
-        next: security2
-      },
-      {
-        text: "Question technician",
-        effect: () => state.trust++,
-        next: security3
-      }
-    ]
-  );
-}
-
-function security2() {
-  scene(
-    "System shows internal override during theft window.",
-    [
-      { text: "Go garden", next: garden }
-    ]
-  );
-}
-
-function security3() {
-  scene(
-    "Technician: 'Someone used an authorized badge... not a hacker.'",
-    [
-      { text: "Go museum", next: museum },
-      { text: "Go library", next: library }
-    ]
-  );
-}
-
-// =========================
-// 🍪 KITCHEN
-// =========================
-function kitchen() {
-  scene(
-    "Kitchen is too clean… like evidence was removed.",
-    [
-      {
-        text: "Search sink",
-        effect: () => {
-          state.clues++;
-          state.inventory.push("Chemical Residue");
-        },
-        next: kitchen2
-      },
-      {
-        text: "Talk to chef",
-        effect: () => state.trust++,
-        next: chef
-      }
-    ]
-  );
-}
-
-function kitchen2() {
-  scene(
-    "Bleach traces suggest cleanup after incident.",
+    "Camera had blind spot activation at exact theft time.",
     [
       { text: "Go security", next: security },
       { text: "Go garden", next: garden }
@@ -220,49 +143,69 @@ function kitchen2() {
   );
 }
 
-// =========================
-// 🍽️ CHEF NPC
-// =========================
-function chef() {
+function museum4() {
+  state.inventory.push("Drag Marks Evidence");
+  update();
+
   scene(
-    "Chef: 'I was cooking... I didn't see anything suspicious.'",
+    "You find drag marks leading toward exit hallway.",
     [
-      { text: "Trust him", next: kitchen },
-      {
-        text: "Accuse him",
-        effect: () => state.clues++,
-        next: security
-      }
+      { text: "Follow marks", next: security },
+      { text: "Return", next: museum }
+    ]
+  );
+}
+
+function museum5() {
+  state.inventory.push("Hidden Dust Sample");
+  update();
+
+  scene(
+    "Dust under stand suggests object was removed carefully.",
+    [
+      { text: "Go kitchen", next: kitchen },
+      { text: "Go security", next: security }
     ]
   );
 }
 
 // =========================
-// 📚 LIBRARY (NEW BIG AREA)
+// 🧍 GUARD (EXPANDED DIALOGUE TREE)
 // =========================
-function library() {
+function guard1() {
   scene(
-    "Books are displaced… one file is missing: Security Protocols.",
+    "Guard: 'I… I didn’t see anything unusual.'",
     [
       {
-        text: "Search shelves",
-        effect: () => {
-          state.clues++;
-          state.inventory.push("Torn Security Page");
-        },
-        next: library2
+        text: "Press harder",
+        effect: () => state.trust++,
+        next: guard2
       },
       {
-        text: "Talk to librarian",
-        next: librarian
+        text: "Observe behavior",
+        next: guard3
+      },
+      {
+        text: "Leave",
+        next: museum
       }
     ]
   );
 }
 
-function library2() {
+function guard2() {
   scene(
-    "The missing file describes museum blind spots.",
+    "Guard: 'Fine… someone used a badge after hours.'",
+    [
+      { text: "Ask who", next: security },
+      { text: "Go kitchen", next: kitchen }
+    ]
+  );
+}
+
+function guard3() {
+  scene(
+    "He avoids eye contact. Hands shaking.",
     [
       { text: "Go security", next: security },
       { text: "Go museum", next: museum }
@@ -271,73 +214,192 @@ function library2() {
 }
 
 // =========================
-// 🧍 LIBRARIAN
+// 🖥️ SECURITY (MORE OPTIONS)
 // =========================
-function librarian() {
+function security() {
   scene(
-    "Librarian: 'Some books are better left unread.'",
+    "Monitors flicker. One feed is missing from exactly 2:14 AM.",
     [
       {
-        text: "Force answers",
-        effect: () => state.trust--,
-        next: security
-      },
-      { text: "Leave", next: library }
-    ]
-  );
-}
-
-// =========================
-// 🌿 GARDEN (FINAL HUB)
-// =========================
-function garden() {
-  scene(
-    "Fog covers the garden. Everything connects here.",
-    [
-      {
-        text: "Follow footprints",
-        next: finalCase
-      },
-      {
-        text: "Inspect bushes",
+        text: "Check system logs",
         effect: () => state.clues++,
-        next: finalCase
+        next: security2
+      },
+      {
+        text: "Check badge access records",
+        effect: () => state.trust++,
+        next: security3
+      },
+      {
+        text: "View deleted footage recovery",
+        next: security4
+      },
+      {
+        text: "Question technician",
+        next: technician
+      },
+      {
+        text: "Compare timestamps",
+        next: security5
       }
     ]
   );
 }
 
-// =========================
-// 🏁 FINAL CASE (MORE ENDINGS)
-// =========================
-function finalCase() {
+function security2() {
+  scene("System override detected internally.", [{ text: "Continue", next: security }]);
+}
 
-  if (state.clues >= 5 && state.trust >= 2) {
-    goodEnding();
-  }
+function security3() {
+  scene("Three employees accessed restricted zones.", [{ text: "Go garden", next: garden }]);
+}
 
-  else if (state.clues >= 3) {
-    neutralEnding();
-  }
+function security4() {
+  state.inventory.push("Recovered Frame");
+  update();
 
-  else if (state.inventory.includes("Torn Security Page")) {
-    secretEnding();
-  }
+  scene(
+    "You recover a blurred image of someone carrying a case.",
+    [
+      { text: "Analyze image", next: garden },
+      { text: "Go museum", next: museum }
+    ]
+  );
+}
 
-  else {
-    badEnding();
-  }
+function security5() {
+  scene(
+    "Time mismatch suggests intentional manipulation.",
+    [
+      { text: "Go garden", next: garden },
+      { text: "Go library", next: library }
+    ]
+  );
 }
 
 // =========================
-// ENDINGS
+// 🍪 KITCHEN (MORE DEPTH)
 // =========================
+function kitchen() {
+  scene(
+    "Kitchen smells like bleach and metal.",
+    [
+      {
+        text: "Inspect sink",
+        effect: () => state.clues++,
+        next: kitchen2
+      },
+      {
+        text: "Check trash bin",
+        next: kitchen3
+      },
+      {
+        text: "Talk to chef",
+        next: chef1
+      },
+      {
+        text: "Check storage room",
+        next: kitchen4
+      }
+    ]
+  );
+}
+
+function kitchen2() {
+  state.inventory.push("Chemical Residue");
+  update();
+
+  scene("Cleaning agents were used recently.", [{ text: "Continue", next: kitchen }]);
+}
+
+function kitchen3() {
+  state.inventory.push("Discarded Fabric");
+  update();
+
+  scene("Fabric matches museum uniform style.", [{ text: "Go security", next: security }]);
+}
+
+function kitchen4() {
+  scene("Storage room has been recently accessed.", [{ text: "Go garden", next: garden }]);
+}
+
+// =========================
+// 🍽️ CHEF
+// =========================
+function chef1() {
+  scene(
+    "Chef: 'I only cook… I don’t deal with museum things.'",
+    [
+      { text: "Believe him", next: kitchen },
+      { text: "Accuse him", next: security }
+    ]
+  );
+}
+
+// =========================
+// 🌿 GARDEN (FINAL HUB EXPANDED)
+// =========================
+function garden() {
+  scene(
+    "Fog covers the garden. Everything connects here.",
+    [
+      { text: "Follow footprints", next: finalCase },
+      { text: "Inspect bushes", next: finalCase },
+      { text: "Check hidden wall", next: secretPath },
+      { text: "Wait silently", next: finalCase },
+      { text: "Revisit museum clues", next: museum }
+    ]
+  );
+}
+
+// =========================
+// 💀 SECRET PATH
+// =========================
+function secretPath() {
+  scene(
+    "A hidden door appears behind ivy.",
+    [
+      {
+        text: "Enter hidden room",
+        next: secretRoom
+      },
+      {
+        text: "Go back",
+        next: garden
+      }
+    ]
+  );
+}
+
+function secretRoom() {
+  scene(
+    "You discover surveillance records of ALL suspects.",
+    [
+      {
+        text: "Analyze files",
+        next: secretEnding
+      },
+      { text: "Leave", next: badEnding }
+    ]
+  );
+}
+
+// =========================
+// ENDINGS (MORE CONDITIONS)
+// =========================
+function finalCase() {
+  if (state.clues >= 6 && state.trust >= 3) goodEnding();
+  else if (state.inventory.includes("Recovered Frame")) secretEnding();
+  else if (state.clues >= 4) neutralEnding();
+  else badEnding();
+}
+
 function goodEnding() {
-  scene("🏆 Perfect deduction. Insider exposed. Case solved.", [{ text: "Restart", next: start }]);
+  scene("🏆 Perfect case solved. Insider exposed.", [{ text: "Restart", next: start }]);
 }
 
 function neutralEnding() {
-  scene("🟡 Case solved, but key truths remain hidden.", [{ text: "Restart", next: start }]);
+  scene("🟡 Case solved but incomplete truth.", [{ text: "Restart", next: start }]);
 }
 
 function badEnding() {
@@ -345,7 +407,7 @@ function badEnding() {
 }
 
 function secretEnding() {
-  scene("🧠 SECRET ENDING: You discovered hidden internal surveillance conspiracy.", [{ text: "Restart", next: start }]);
+  scene("🧠 SECRET: You uncovered hidden surveillance conspiracy.", [{ text: "Restart", next: start }]);
 }
 
 // START
