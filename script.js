@@ -1,208 +1,70 @@
-alert("NEW SCRIPT IS LOADED");
-// ----------------------
-// GAME STATE
-// ----------------------
-let score = 0;
-let trust = 0;
-let evidence = [];
-
-// ----------------------
-// ELEMENTS
-// ----------------------
-const textEl = document.getElementById("text");
-const choicesEl = document.getElementById("choices");
-
-// ----------------------
-// TYPEWRITER EFFECT
-// ----------------------
-function typeText(text, speed = 18) {
-  textEl.innerHTML = "";
-  let i = 0;
-
-  function type() {
-    if (i < text.length) {
-      textEl.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(type, speed);
-    }
-  }
-
-  type();
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  color: white;
 }
 
-// ----------------------
-// SCENE ENGINE
-// ----------------------
-function setScene(text, choices) {
-  typeText(text);
-
-  choicesEl.innerHTML = "";
-
-  choices.forEach(choice => {
-    const btn = document.createElement("button");
-    btn.innerText = choice.text;
-
-    btn.onclick = () => {
-      // play click sound if you added it
-      if (choice.effect) choice.effect();
-      choice.next();
-    };
-
-    choicesEl.appendChild(btn);
-  });
+.app {
+  max-width: 700px;
+  margin: auto;
+  padding: 20px;
+  text-align: center;
 }
 
-// ----------------------
-// START GAME
-// ----------------------
-function start() {
-  score = 0;
-  trust = 0;
-  evidence = [];
-
-  setScene(
-    "🕵️ Detective Mira arrives at the museum. The diamond is missing. The cameras are down. Something feels off... where do you go first?",
-    [
-      { text: "🍪 Kitchen", next: kitchen },
-      { text: "🛏️ Security Room", next: securityRoom },
-      { text: "🌿 Garden Exit", next: gardenExit }
-    ]
-  );
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-// ----------------------
-// KITCHEN PATH
-// ----------------------
-function kitchen() {
-  setScene(
-    "The kitchen smells strange. You see crumbs, a broken plate, and a locked drawer.",
-    [
-      {
-        text: "Open drawer (risky)",
-        effect: () => score += 5,
-        next: () => {
-          if (Math.random() < 0.4) {
-            lose("A trap activates. You get caught in a net.");
-          } else {
-            evidence.push("Key");
-            kitchen2();
-          }
-        }
-      },
-      {
-        text: "Eat crumbs",
-        next: () => lose("The crumbs were poisoned cookies ☠️")
-      },
-      {
-        text: "Leave",
-        next: start
-      }
-    ]
-  );
+.stats {
+  font-size: 14px;
+  opacity: 0.8;
 }
 
-function kitchen2() {
-  setScene(
-    "Inside the drawer you find a strange key with a symbol.",
-    [
-      {
-        text: "Take key",
-        effect: () => evidence.push("Key"),
-        next: start
-      },
-      {
-        text: "Ignore it",
-        next: start
-      }
-    ]
-  );
+.game-card {
+  margin-top: 60px;
+  padding: 30px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  min-height: 200px;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-// ----------------------
-// SECURITY ROOM PATH
-// ----------------------
-function securityRoom() {
-  setScene(
-    "The security feed is corrupted. A guard looks nervous.",
-    [
-      {
-        text: "Interrogate guard",
-        effect: () => trust += 1,
-        next: securityTruth
-      },
-      {
-        text: "Hack system",
-        effect: () => score += 5,
-        next: () => lose("You triggered the alarm system 🚨")
-      },
-      {
-        text: "Leave",
-        next: () => lose("You ignored key evidence. Case lost.")
-      }
-    ]
-  );
+.fade {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-function securityTruth() {
-  setScene(
-    "The guard whispers: 'I saw someone heading toward the garden...'",
-    [
-      { text: "Go to garden", next: gardenExit }
-    ]
-  );
+.fade-out {
+  opacity: 0;
+  transform: translateY(20px);
 }
 
-// ----------------------
-// GARDEN PATH
-// ----------------------
-function gardenExit() {
-  setScene(
-    "The foggy garden is silent. Footprints lead deeper in... you hear movement behind you.",
-    [
-      {
-        text: "Chase suspect",
-        next: () => {
-          if (trust > 0) {
-            win("You and the guard work together and catch the thief 🏆");
-          } else {
-            lose("You chased the wrong person. It was a trap.");
-          }
-        }
-      },
-      {
-        text: "Hide",
-        next: () => lose("You hesitated too long. The thief escaped.")
-      },
-      {
-        text: "Call backup",
-        next: () => win("Backup arrives and you solve the case professionally 🚔")
-      }
-    ]
-  );
+#text {
+  font-size: 22px;
+  min-height: 80px;
 }
 
-// ----------------------
-// ENDINGS
-// ----------------------
-function win(message) {
-  setScene(
-    "🏆 " + message + "\n\nFINAL SCORE: " + score + "\nEVIDENCE: " + evidence.join(", "),
-    [
-      { text: "Play Again", next: start }
-    ]
-  );
+button {
+  margin: 10px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: none;
+  background: #6366f1;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-function lose(message) {
-  setScene(
-    "💀 " + message + "\n\nGAME OVER\nFINAL SCORE: " + score,
-    [
-      { text: "Restart", next: start }
-    ]
-  );
+button:hover {
+  background: #818cf8;
+  transform: scale(1.05);
 }
 
-// ----------------------
-// START GAME ON LOAD
-// ----------------------
-start();
+.restart {
+  margin-top: 20px;
+  background: #ef4444;
+}
