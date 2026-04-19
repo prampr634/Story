@@ -1,249 +1,190 @@
-// ======================
-// GAME STATE (GLOBAL)
-// ======================
-const state = {
+// =========================
+// STATE SYSTEM
+// =========================
+let state = {
   score: 0,
   clues: 0,
   trust: 0,
-  locked: false
+  inventory: []
 };
 
-// ======================
-// DOM ELEMENTS
-// ======================
+// =========================
+// ELEMENTS
+// =========================
 const textEl = document.getElementById("text");
 const choicesEl = document.getElementById("choices");
 const scoreEl = document.getElementById("score");
 const cluesEl = document.getElementById("clues");
 const trustEl = document.getElementById("trust");
+const invEl = document.getElementById("inv");
 
-// ======================
-// SAFE TYPEWRITER (FIXED)
-// ======================
-function typeText(text, done) {
+// =========================
+// SAFE TYPEWRITER ENGINE
+// =========================
+let typing = false;
+
+function typeText(text, cb) {
+  typing = true;
   textEl.innerHTML = "";
-  let i = 0;
 
+  let i = 0;
   const interval = setInterval(() => {
     textEl.innerHTML += text[i];
     i++;
-
     if (i >= text.length) {
       clearInterval(interval);
-      if (done) done();
+      typing = false;
+      if (cb) cb();
     }
   }, 15);
 }
 
-// ======================
-// UPDATE UI
-// ======================
-function updateStats() {
+// =========================
+// UI UPDATE
+// =========================
+function update() {
   scoreEl.innerText = state.score;
   cluesEl.innerText = state.clues;
   trustEl.innerText = state.trust;
+  invEl.innerText = state.inventory.length ? state.inventory.join(", ") : "None";
 }
 
-// ======================
-// ENGINE: SET SCENE (LOCKED SAFE)
-// ======================
-function setScene(text, options = []) {
-  state.locked = true;
-
+// =========================
+// SCENE ENGINE
+// =========================
+function scene(text, options = []) {
   choicesEl.innerHTML = "";
 
   typeText(text, () => {
-    state.locked = false;
+    options.forEach(o => {
+      const b = document.createElement("button");
+      b.innerText = o.text;
 
-    options.forEach(opt => {
-      const btn = document.createElement("button");
-      btn.innerText = opt.text;
-
-      btn.onclick = () => {
-        if (state.locked) return; // prevents spam bugs
-
-        if (opt.effect) opt.effect();
-        updateStats();
-
-        opt.next();
+      b.onclick = () => {
+        if (o.effect) o.effect();
+        update();
+        o.next();
       };
 
-      choicesEl.appendChild(btn);
+      choicesEl.appendChild(b);
     });
   });
 }
 
-// ======================
-// START GAME
-// ======================
+// =========================
+// START
+// =========================
 function start() {
-  state.score = 0;
-  state.clues = 0;
-  state.trust = 0;
+  state = { score: 0, clues: 0, trust: 0, inventory: [] };
+  update();
 
-  updateStats();
-
-  setScene(
-    "🕵️ Detective Mira enters the locked museum. The diamond is gone. Cameras are dead. Silence feels wrong… Where do you investigate first?",
+  scene(
+    "🕵️ The diamond is missing. The museum is locked. Three locations are available.",
     [
-      { text: "🍪 Kitchen Wing", next: kitchen },
-      { text: "🧠 Security Hub", next: security },
-      { text: "🌿 Garden Exit", next: garden }
+      { text: "🍪 Kitchen", next: kitchen },
+      { text: "🖥️ Security Room", next: security },
+      { text: "🌿 Garden", next: garden }
     ]
   );
 }
 
-// ======================
-// KITCHEN (MORE COMPLEX)
-// ======================
+// =========================
+// KITCHEN
+// =========================
 function kitchen() {
-  setScene(
-    "The kitchen smells metallic. A drawer is slightly open… and something is dripping.",
+  scene(
+    "The kitchen is messy. Something was dragged across the floor.",
     [
       {
-        text: "Open drawer",
-        effect: () => state.clues += 1,
-        next: kitchen2
+        text: "Search drawers",
+        effect: () => state.clues++,
+        next: () => {
+          state.inventory.push("Key");
+          update();
+          kitchen2();
+        }
       },
       {
-        text: "Inspect floor",
-        effect: () => state.score += 2,
-        next: kitchenFloor
-      },
-      {
-        text: "Eat cookie (risky)",
-        next: () => lose("☠️ The cookie was poisoned. Instant failure.")
+        text: "Leave",
+        next: start
       }
     ]
   );
 }
 
 function kitchen2() {
-  setScene(
-    "Inside the drawer: a coded key and a torn note saying 'GARDEN = TRUTH'.",
+  scene(
+    "You found a strange key. It might open something important.",
     [
-      {
-        text: "Take both items",
-        effect: () => state.clues += 2,
-        next: start
-      },
-      {
-        text: "Ignore it",
-        next: start
-      }
+      { text: "Return", next: start }
     ]
   );
 }
 
-function kitchenFloor() {
-  setScene(
-    "You find muddy footprints AND fresh blood stains.",
-    [
-      {
-        text: "Follow footprints",
-        next: garden
-      },
-      {
-        text: "Report evidence",
-        effect: () => state.trust += 1,
-        next: security
-      }
-    ]
-  );
-}
-
-// ======================
-// SECURITY (MORE BRANCHES)
-// ======================
+// =========================
+// SECURITY
+// =========================
 function security() {
-  setScene(
-    "Security hub is frozen. One guard is sweating heavily.",
+  scene(
+    "Monitors flicker. A guard avoids eye contact.",
     [
       {
-        text: "Interrogate guard",
-        effect: () => state.trust += 2,
-        next: securityTalk
-      },
-      {
-        text: "Hack system",
-        next: () => lose("🚨 You triggered lockdown protocol.")
-      },
-      {
-        text: "Watch silently",
-        effect: () => state.score += 3,
-        next: securitySilent
-      }
-    ]
-  );
-}
-
-function securityTalk() {
-  setScene(
-    "Guard whispers: 'Someone inside the garden is lying… badly.'",
-    [
-      { text: "Go garden", next: garden }
-    ]
-  );
-}
-
-function securitySilent() {
-  setScene(
-    "You notice hidden camera footage glitching… showing a SECOND suspect.",
-    [
-      { text: "Investigate garden", next: garden }
-    ]
-  );
-}
-
-// ======================
-// GARDEN (FINAL ROUTE)
-// ======================
-function garden() {
-  setScene(
-    "Fog spreads across the garden. Two paths appear: one clean, one destroyed.",
-    [
-      {
-        text: "Take clean path",
+        text: "Interrogate",
+        effect: () => state.trust++,
         next: () => {
-          if (state.trust >= 2) {
-            win("🏆 You correctly identify the thief with strong evidence.");
-          } else {
-            lose("You trusted the wrong clues. The thief escapes.");
-          }
+          scene(
+            "Guard: 'I saw someone go to the garden.'",
+            [{ text: "Go garden", next: garden }]
+          );
         }
       },
       {
-        text: "Take broken path",
+        text: "Hack system",
+        next: () => lose("Alarm triggered. Investigation failed.")
+      }
+    ]
+  );
+}
+
+// =========================
+// GARDEN
+// =========================
+function garden() {
+  scene(
+    "Fog covers the garden. Two paths appear.",
+    [
+      {
+        text: "Follow path",
         next: () => {
-          if (state.clues >= 3) {
-            win("🏆 You piece together all clues and solve the case.");
+          if (state.trust > 0 && state.inventory.includes("Key")) {
+            win("You solved the case using all evidence 🏆");
           } else {
-            lose("Trap activated. Wrong path.");
+            lose("You were tricked. Wrong path.");
           }
         }
       },
       {
         text: "Call backup",
-        next: () => win("🚔 Backup arrives. Case solved professionally.")
+        next: () => win("Backup arrives. Case solved professionally 🚔")
       }
     ]
   );
 }
 
-// ======================
+// =========================
 // ENDINGS
-// ======================
+// =========================
 function win(msg) {
-  setScene("🏆 " + msg + "\n\nFinal Score: " + state.score, [
+  scene("🏆 " + msg, [
     { text: "Play Again", next: start }
   ]);
 }
 
 function lose(msg) {
-  setScene("💀 " + msg + "\n\nCase Failed.", [
+  scene("💀 " + msg, [
     { text: "Restart", next: start }
   ]);
 }
 
-// START
+// START GAME
 start();
