@@ -1,6 +1,25 @@
+ // =========================
+// SOUND SYSTEM
+// =========================
+const sounds = {
+  click: new Audio("sound/click.mp3"),
+  win: new Audio("sound/win.mp3"),
+  lose: new Audio("sound/lose.mp3"),
+  tension: new Audio("sound/tension.mp3"),
+  clue: new Audio("sound/clue.mp3")
+};
+
+function playSound(name) {
+  if (!sounds[name]) return;
+  sounds[name].currentTime = 0;
+  sounds[name].play();
+}
+
+// loop tension music
+sounds.tension.loop = true;
 
 // =========================
-// STATE (UPGRADED)
+// STATE
 // =========================
 let state = {
   clues: [],
@@ -17,10 +36,8 @@ let state = {
 // =========================
 const textEl = document.getElementById("text");
 const choicesEl = document.getElementById("choices");
-const scoreEl = document.getElementById("score");
 const cluesEl = document.getElementById("clues");
 const trustEl = document.getElementById("trust");
-const invEl = document.getElementById("inv");
 
 let typing = false;
 
@@ -40,11 +57,11 @@ function typeText(text, cb) {
       typing = false;
       if (cb) cb();
     }
-  }, 8);
+  }, 10);
 }
 
 // =========================
-// UI UPDATE
+// UPDATE UI
 // =========================
 function update() {
   cluesEl.innerText = state.clues.length;
@@ -64,6 +81,8 @@ function scene(text, options = []) {
 
       btn.onclick = () => {
         if (typing) return;
+
+        playSound("click");
 
         if (o.effect) o.effect();
         update();
@@ -86,6 +105,8 @@ function start() {
     trust: 0,
     suspicion: { guard: 0, chef: 0, technician: 0 }
   };
+
+  sounds.tension.pause();
   update();
   hub();
 }
@@ -94,14 +115,16 @@ function start() {
 // HUB
 // =========================
 function hub() {
+  sounds.tension.play();
+
   scene(
-    "🕵️ The diamond is missing. Choose where to investigate:",
+    "🕵️ The diamond is missing. The museum is locked. Every move matters.",
     [
       { text: "🏛️ Museum", next: museum },
-      { text: "🖥️ Security Room", next: security },
+      { text: "🖥️ Security", next: security },
       { text: "🍪 Kitchen", next: kitchen },
       { text: "🌿 Garden", next: garden },
-      { text: "📓 DEDUCTION BOARD", next: deductionBoard }
+      { text: "📓 Deduction Board", next: deductionBoard }
     ]
   );
 }
@@ -111,12 +134,15 @@ function hub() {
 // =========================
 function museum() {
   scene(
-    "Glass case shattered from inside.",
+    "The glass case is shattered from inside.",
     [
       {
         text: "Inspect glass",
-        effect: () => state.clues.push("Glass broken from inside"),
-        next: hub
+        effect: () => {
+          state.clues.push("Inside break");
+          playSound("clue");
+        },
+        next: museum2
       },
       {
         text: "Talk guard",
@@ -127,25 +153,38 @@ function museum() {
   );
 }
 
+function museum2() {
+  scene(
+    "This was not a forced entry… someone inside did this.",
+    [
+      { text: "Go security", next: security },
+      { text: "Return", next: hub }
+    ]
+  );
+}
+
 // =========================
-// GUARD (SUSPECT SYSTEM)
+// GUARD
 // =========================
 function guard() {
   scene(
-    "Guard avoids eye contact.",
+    "Guard looks nervous.",
     [
       {
         text: "Press him",
-        effect: () => state.suspicion.guard += 1,
+        effect: () => {
+          state.suspicion.guard += 2;
+          state.trust++;
+        },
         next: () => {
-          scene("Guard looks nervous… too nervous.", [
-            { text: "Return hub", next: hub }
+          scene("Guard: 'I… I didn’t mean to…'", [
+            { text: "Return", next: hub }
           ]);
         }
       },
       {
-        text: "Accuse guard",
-        effect: () => state.suspicion.guard += 2,
+        text: "Observe silently",
+        effect: () => state.suspicion.guard++,
         next: hub
       }
     ]
@@ -157,18 +196,32 @@ function guard() {
 // =========================
 function security() {
   scene(
-    "Footage missing at exact theft time.",
+    "Camera feed is missing at the exact moment.",
     [
       {
         text: "Check logs",
-        effect: () => state.clues.push("System override detected"),
-        next: hub
+        effect: () => {
+          state.clues.push("Override used");
+          playSound("clue");
+        },
+        next: security2
       },
       {
-        text: "Check technician access",
+        text: "Check technician",
         effect: () => state.suspicion.technician += 2,
         next: hub
-      }
+      },
+      { text: "Return", next: hub }
+    ]
+  );
+}
+
+function security2() {
+  scene(
+    "System was manually overridden.",
+    [
+      { text: "Go garden", next: garden },
+      { text: "Return", next: hub }
     ]
   );
 }
@@ -178,28 +231,28 @@ function security() {
 // =========================
 function kitchen() {
   scene(
-    "Kitchen smells like bleach.",
+    "Strong bleach smell fills the room.",
     [
       {
         text: "Search sink",
-        effect: () => state.clues.push("Chemical cleanup evidence"),
+        effect: () => {
+          state.clues.push("Cleanup evidence");
+          playSound("clue");
+        },
         next: hub
       },
       {
         text: "Talk chef",
-        effect: () => state.suspicion.chef += 1,
+        effect: () => state.suspicion.chef++,
         next: chef
       }
     ]
   );
 }
 
-// =========================
-// CHEF
-// =========================
 function chef() {
   scene(
-    "Chef denies involvement.",
+    "Chef: 'I only cook… I swear.'",
     [
       {
         text: "Accuse chef",
@@ -216,16 +269,22 @@ function chef() {
 // =========================
 function garden() {
   scene(
-    "Fog hides footprints.",
+    "Fog covers the ground.",
     [
       {
         text: "Follow footprints",
-        effect: () => state.clues.push("Escape route toward garden"),
+        effect: () => {
+          state.clues.push("Escape route");
+          playSound("clue");
+        },
         next: hub
       },
       {
         text: "Search bushes",
-        effect: () => state.clues.push("Hidden movement detected"),
+        effect: () => {
+          state.clues.push("Hidden stash");
+          playSound("clue");
+        },
         next: hub
       }
     ]
@@ -233,45 +292,48 @@ function garden() {
 }
 
 // =========================
-// 📓 DEDUCTION BOARD (NEW CORE SYSTEM)
+// DEDUCTION BOARD
 // =========================
 function deductionBoard() {
-  let topSuspect = "None";
+  let suspect = "None";
 
-  if (state.suspicion.guard > state.suspicion.chef &&
-      state.suspicion.guard > state.suspicion.technician) {
-    topSuspect = "Guard";
-  } else if (state.suspicion.chef > state.suspicion.guard &&
-             state.suspicion.chef > state.suspicion.technician) {
-    topSuspect = "Chef";
-  } else if (state.suspicion.technician > 0) {
-    topSuspect = "Technician";
-  }
+  if (state.suspicion.guard >= 3) suspect = "Guard";
+  else if (state.suspicion.technician >= 3) suspect = "Technician";
+  else if (state.suspicion.chef >= 3) suspect = "Chef";
 
   scene(
-    `📓 DEDUCTION BOARD\n\nClues Found: ${state.clues.length}\nTop Suspect: ${topSuspect}`,
+    `📓 CLUES: ${state.clues.length}\nTOP SUSPECT: ${suspect}`,
     [
       {
-        text: "Make arrest",
-        next: () => finalVerdict(topSuspect)
+        text: "Make Arrest",
+        next: () => ending(suspect)
       },
-      { text: "Return hub", next: hub }
+      { text: "Return", next: hub }
     ]
   );
 }
 
 // =========================
-// FINAL VERDICT SYSTEM
+// ENDINGS
 // =========================
-function finalVerdict(suspect) {
+function ending(suspect) {
+  sounds.tension.pause();
+
   if (suspect === "Guard") {
-    scene("🏆 You arrested the guard. Case solved.", [{ text: "Restart", next: start }]);
-  } else if (suspect === "Chef") {
-    scene("🟡 Chef was involved but not main thief.", [{ text: "Restart", next: start }]);
+    playSound("win");
+    scene("🏆 You solved the case. The guard confesses.", [
+      { text: "Restart", next: start }
+    ]);
   } else if (suspect === "Technician") {
-    scene("🧠 Technician was mastermind behind system override.", [{ text: "Restart", next: start }]);
+    playSound("win");
+    scene("🧠 Technician planned everything. Genius capture.", [
+      { text: "Restart", next: start }
+    ]);
   } else {
-    scene("💀 No solid evidence. Case failed.", [{ text: "Restart", next: start }]);
+    playSound("lose");
+    scene("💀 Wrong suspect. The real thief escapes.", [
+      { text: "Restart", next: start }
+    ]);
   }
 }
 
