@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Detective Mira: The Diamond Case</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="game">
+    <h1>🕵️ Detective Mira</h1>
+
+    <div id="stats">
+      ⭐ Score: <span id="score">0</span> |
+      🎒 Inventory: <span id="inventory">None</span>
+    </div>
+
+    <p id="text"></p>
+
+    <div id="choices"></div>
+
+    <button id="restart" onclick="restart()">🔄 Restart</button>
+  </div>
+
+  <audio id="clickSound" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+  <audio id="winSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>
