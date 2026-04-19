@@ -1,5 +1,5 @@
 // =========================
-// SOUND (song/)
+// SOUND SYSTEM (song/)
 // =========================
 const sounds = {
   click: new Audio("song/click.mp3"),
@@ -20,7 +20,17 @@ function play(s) {
 // =========================
 // STATE
 // =========================
-let state;
+let state = {
+  clues: [],
+  suspects: {
+    chef: 0,
+    conductor: 0,
+    passenger: 0
+  },
+  knife: false,
+  bag: false,
+  cargo: false
+};
 
 // =========================
 // ELEMENTS
@@ -47,7 +57,7 @@ function typeText(text, cb) {
       typing = false;
       cb && cb();
     }
-  }, 12);
+  }, 10);
 }
 
 // =========================
@@ -58,17 +68,17 @@ function update() {
 }
 
 // =========================
-// SCENE ENGINE
+// ENGINE
 // =========================
-function scene(text, options) {
+function scene(text, options = []) {
   choicesEl.innerHTML = "";
 
   typeText(text, () => {
     options.forEach(o => {
-      const b = document.createElement("button");
-      b.innerText = o.text;
+      const btn = document.createElement("button");
+      btn.innerText = o.text;
 
-      b.onclick = () => {
+      btn.onclick = () => {
         if (typing) return;
 
         play("click");
@@ -79,7 +89,7 @@ function scene(text, options) {
         o.next();
       };
 
-      choicesEl.appendChild(b);
+      choicesEl.appendChild(btn);
     });
   });
 }
@@ -90,9 +100,10 @@ function scene(text, options) {
 function start() {
   state = {
     clues: [],
-    ticketChecked: false,
-    bagFound: false,
-    suspectUnlocked: false
+    suspects: { chef: 0, conductor: 0, passenger: 0 },
+    knife: false,
+    bag: false,
+    cargo: false
   };
 
   sounds.tension.play().catch(()=>{});
@@ -100,71 +111,28 @@ function start() {
 }
 
 // =========================
-// STORY START
+// INTRO
 // =========================
 function intro() {
   scene(
-    "🚆 Midnight. You board a quiet train. Suddenly — a scream echoes. A passenger is missing.",
+    "🚆 Midnight Express. A passenger vanished mid-journey. Doors are locked. You are the only investigator onboard.",
     [
-      { text: "Investigate immediately", next: cabin }
+      { text: "Start Investigation", next: train }
     ]
   );
 }
 
 // =========================
-// CABIN
+// TRAIN HUB
 // =========================
-function cabin() {
+function train() {
   scene(
-    "The victim’s seat is empty. A bag is left behind.",
+    "You stand in the shaking corridor. Three places feel suspicious.",
     [
-      {
-        text: "Search bag",
-        effect: () => {
-          state.clues.push("Strange ticket");
-          state.bagFound = true;
-          play("clue");
-        },
-        next: hallway
-      },
-      {
-        text: "Ask nearby passenger",
-        next: passenger
-      }
-    ]
-  );
-}
-
-// =========================
-// PASSENGER
-// =========================
-function passenger() {
-  scene(
-    "Passenger: 'I saw someone leave quickly… toward the back.'",
-    [
-      {
-        text: "Follow direction",
-        next: hallway
-      }
-    ]
-  );
-}
-
-// =========================
-// HALLWAY
-// =========================
-function hallway() {
-  scene(
-    "The train sways. Lights flicker.",
-    [
-      {
-        text: "Check dining car",
-        next: dining
-      },
-      {
-        text: "Go to luggage car",
-        next: luggage
-      }
+      { text: "🍽 Dining Car", next: dining },
+      { text: "📦 Cargo Car", next: cargo },
+      { text: "🚪 Passenger Cabins", next: cabins },
+      { text: "🧠 Interrogate Suspects", next: suspects }
     ]
   );
 }
@@ -174,61 +142,77 @@ function hallway() {
 // =========================
 function dining() {
   scene(
-    "A chef is nervously cleaning.",
+    "The chef is cleaning aggressively… too clean.",
     [
       {
-        text: "Question chef",
-        effect: () => {
-          state.clues.push("Chef nervous");
-          play("clue");
-        },
-        next: reveal
-      },
-      {
-        text: "Inspect kitchen",
+        text: "Inspect counter",
         effect: () => {
           state.clues.push("Knife missing");
+          state.knife = true;
+          state.suspects.chef++;
           play("clue");
         },
-        next: reveal
-      }
-    ]
-  );
-}
-
-// =========================
-// LUGGAGE
-// =========================
-function luggage() {
-  scene(
-    "You find a locked suitcase.",
-    [
-      {
-        text: "Force it open",
-        effect: () => {
-          state.clues.push("Hidden money");
-          play("clue");
-        },
-        next: reveal
+        next: train
       },
       {
-        text: "Leave it",
-        next: reveal
+        text: "Question chef",
+        effect: () => state.suspects.chef++,
+        next: chefTalk
+      }
+    ]
+  );
+}
+
+function chefTalk() {
+  scene(
+    "Chef: 'I never left this car.'",
+    [
+      { text: "Return", next: train }
+    ]
+  );
+}
+
+// =========================
+// CARGO CAR
+// =========================
+function cargo() {
+  scene(
+    "Cargo crates are shifted slightly… something moved here.",
+    [
+      {
+        text: "Search crates",
+        effect: () => {
+          state.clues.push("Hidden bag found");
+          state.cargo = true;
+          state.suspects.conductor++;
+          play("clue");
+        },
+        next: train
       }
     ]
   );
 }
 
 // =========================
-// REVEAL SUSPECTS
+// CABINS
 // =========================
-function reveal() {
-  state.suspectUnlocked = true;
-
+function cabins() {
   scene(
-    "All passengers are gathered. One of them is lying.",
+    "Passenger cabins are empty… except one open suitcase.",
     [
-      { text: "Interrogate suspects", next: suspects }
+      {
+        text: "Inspect suitcase",
+        effect: () => {
+          state.clues.push("Strange ticket");
+          state.suspects.passenger++;
+          play("clue");
+        },
+        next: train
+      },
+      {
+        text: "Check hallway",
+        next: train
+      }
     ]
   );
 }
@@ -238,35 +222,97 @@ function reveal() {
 // =========================
 function suspects() {
   scene(
-    "Who do you accuse?",
+    "Choose who to interrogate:",
     [
-      { text: "Chef", next: () => ending("chef") },
-      { text: "Passenger", next: () => ending("passenger") },
-      { text: "Conductor", next: () => ending("conductor") }
+      { text: "Chef", next: chefAccuse },
+      { text: "Conductor", next: conductorAccuse },
+      { text: "Passenger", next: passengerAccuse },
+      { text: "Return", next: train }
     ]
   );
 }
 
+function chefAccuse() {
+  scene("Chef avoids eye contact.", [
+    {
+      text: "Press harder",
+      effect: () => state.suspects.chef++,
+      next: train
+    }
+  ]);
+}
+
+function conductorAccuse() {
+  scene("Conductor seems too calm…", [
+    {
+      text: "Observe",
+      effect: () => state.suspects.conductor++,
+      next: train
+    }
+  ]);
+}
+
+function passengerAccuse() {
+  scene("Passenger claims innocence…", [
+    {
+      text: "Doubt them",
+      effect: () => state.suspects.passenger++,
+      next: train
+    }
+  ]);
+}
+
 // =========================
-// ENDINGS
+// ENDING LOGIC
 // =========================
-function ending(choice) {
+function suspectsScore() {
+  if (state.suspects.conductor > state.suspects.chef &&
+      state.suspects.conductor > state.suspects.passenger) return "conductor";
+
+  if (state.suspects.chef > state.suspects.conductor &&
+      state.suspects.chef > state.suspects.passenger) return "chef";
+
+  return "passenger";
+}
+
+function ending() {
   sounds.tension.pause();
 
-  if (choice === "conductor" && state.clues.includes("Strange ticket")) {
+  const result = suspectsScore();
+
+  if (result === "conductor" && state.cargo && state.knife) {
     play("win");
-    scene(
-      "🏆 The conductor forged tickets and kidnapped the passenger. You solved it.",
-      [{ text: "Play Again", next: start }]
-    );
-  } else {
+    scene("🏆 You caught the conductor. He orchestrated the disappearance during the stop.", [
+      { text: "Play Again", next: start }
+    ]);
+  }
+  else if (result === "chef") {
     play("lose");
-    scene(
-      "💀 Wrong accusation. The real culprit escapes at the next stop.",
-      [{ text: "Retry", next: start }]
-    );
+    scene("💀 Wrong suspect. The real culprit escapes at the next station.", [
+      { text: "Retry", next: start }
+    ]);
+  }
+  else {
+    play("lose");
+    scene("💀 Evidence was incomplete. The case remains unsolved.", [
+      { text: "Retry", next: start }
+    ]);
   }
 }
 
-// START
+// trigger ending option inside train
+function train() {
+  scene(
+    "You are inside the moving train. Everything connects here.",
+    [
+      { text: "🍽 Dining Car", next: dining },
+      { text: "📦 Cargo Car", next: cargo },
+      { text: "🚪 Cabins", next: cabins },
+      { text: "🧠 Suspects", next: suspects },
+      { text: "📊 Make Final Deduction", next: ending }
+    ]
+  );
+}
+
+// START GAME
 start();
