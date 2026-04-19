@@ -1,28 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Detective Mira: Case File Engine</title>
+  <title>Detective Mira: AAA Engine</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="app">
 
-  <h1>🕵️ Detective Mira</h1>
+  <header class="top">
+    <h1>🕵️ Detective Mira</h1>
+    <div class="hud">
+      ⭐ <span id="score">0</span>
+      🧠 <span id="clues">0</span>
+      ⚖️ <span id="trust">0</span>
+    </div>
+  </header>
 
-  <div class="hud">
-    ⭐ Score: <span id="score">0</span>
-    🧠 Clues: <span id="clues">0</span>
-    ⚖️ Trust: <span id="trust">0</span>
-    🎒 Inventory: <span id="inv">None</span>
-  </div>
-
-  <div class="scene-box">
+  <div id="scene" class="scene">
     <p id="text"></p>
     <div id="choices"></div>
   </div>
 
-  <button onclick="startGame()">Restart Case 🔄</button>
+  <div class="bottom">
+    🎒 Inventory: <span id="inv"></span>
+  </div>
+
+  <div class="buttons">
+    <button onclick="saveGame()">💾 Save</button>
+    <button onclick="loadGame()">📂 Load</button>
+    <button onclick="startGame()">🔄 Restart</button>
+  </div>
 
 </div>
 
