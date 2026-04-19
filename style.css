@@ -23,7 +23,6 @@ body {
   background: rgba(255,255,255,0.05);
   border-radius: 20px;
   min-height: 200px;
-  transition: 0.4s;
 }
 
 #text {
