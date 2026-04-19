@@ -1,140 +1,64 @@
-/* =========================
-   BASE LAYOUT
-========================= */
-
 body {
   margin: 0;
-  font-family: Georgia, serif;
+  font-family: Georgia;
   background: #0b0f1a;
   color: white;
 }
 
-/* MAIN WRAPPER */
-.game {
-  max-width: 1000px;
-  margin: auto;
-  padding: 20px;
-}
-
-/* =========================
-   HEADER HUD
-========================= */
-
-.hud {
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-.stats {
-  opacity: 0.8;
-  margin-top: 5px;
-}
-
-/* =========================
-   STORY BOX
-========================= */
-
-.scene-box {
-  background: rgba(255,255,255,0.06);
-  padding: 20px;
-  border-radius: 12px;
-  min-height: 200px;
-  margin-bottom: 20px;
-}
-
-#text {
-  font-size: 18px;
-  margin-bottom: 15px;
-}
-
-#choices button {
-  display: block;
-  width: 100%;
-  margin: 8px 0;
+/* HUD */
+#hud {
   padding: 10px;
-  cursor: pointer;
-  background: #1c1f2a;
-  color: white;
-  border: 1px solid #333;
-  border-radius: 8px;
-  transition: 0.2s;
+  background: rgba(0,0,0,0.5);
 }
 
-#choices button:hover {
-  background: #2c3142;
-}
-
-/* =========================
-   DETECTIVE UI
-========================= */
-
-.ui {
+/* WORLD LAYOUT */
+#world {
   display: flex;
-  gap: 20px;
 }
 
-.panel {
-  flex: 1;
+/* MAP */
+#map {
+  width: 200px;
+  padding: 10px;
   background: rgba(255,255,255,0.05);
-  padding: 15px;
-  border-radius: 12px;
-  min-height: 200px;
+  height: 100vh;
 }
 
-.panel h2 {
-  margin-top: 0;
-  font-size: 18px;
-}
-
-.panel button {
-  display: block;
+#map button {
   width: 100%;
   margin: 6px 0;
-  padding: 8px;
-  cursor: pointer;
-  background: #141826;
+  padding: 10px;
+  background: #1c2233;
   color: white;
-  border: 1px solid #333;
-  border-radius: 6px;
+  border: none;
 }
 
-.panel button:hover {
-  background: #22283a;
+/* LOCATION */
+#location {
+  flex: 1;
+  padding: 20px;
 }
 
-/* =========================
-   EVIDENCE BOARD
-========================= */
+/* TEXT */
+#text {
+  margin-top: 10px;
+  font-size: 18px;
+}
 
+/* CHOICES */
+button.choice {
+  display: block;
+  margin: 6px 0;
+  padding: 10px;
+  width: 300px;
+  background: #222b40;
+  border: none;
+  color: white;
+}
+
+/* BOARD */
 #board {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-#board li {
-  padding: 6px;
-  margin: 4px 0;
+  width: 250px;
+  padding: 10px;
   background: rgba(255,255,255,0.05);
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-/* =========================
-   FOOTER
-========================= */
-
-.footer {
-  margin-top: 20px;
-  text-align: center;
-  opacity: 0.8;
-}
-
-/* =========================
-   ATMOSPHERIC EFFECTS
-========================= */
-
-body.tension {
-  background: #120000;
-  transition: 0.5s;
 }
